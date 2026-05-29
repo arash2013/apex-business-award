@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #1B2B4B;
+  --color-accent: #C9A84C;
+  --color-bg: #FAFAF8;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-primary);
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-navy text-white px-6 py-3 rounded-lg font-semibold hover:bg-navy-700 transition-colors;
+  }
+  .btn-gold {
+    @apply bg-gold text-navy px-6 py-3 rounded-lg font-semibold hover:bg-gold-600 transition-colors;
+  }
+  .badge-gold {
+    @apply inline-flex items-center gap-1.5 bg-gold-50 text-gold-700 border border-gold-400 px-3 py-1 rounded-full text-sm font-medium;
+  }
+}
