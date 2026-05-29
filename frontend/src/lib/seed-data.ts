@@ -179,10 +179,9 @@ export const SEED_BUSINESSES: SeedBusiness[] = [
     googleReviewCount: 32,
     yelpRating: 3.8,
     yelpReviewCount: 14,
-    qualificationScore: 41.5,
+    qualificationScore: 0.0,
     qualified: false,
     yearsInBusiness: 2,
-    tier: "basic",
     year: 2026,
   },
   {
@@ -198,10 +197,9 @@ export const SEED_BUSINESSES: SeedBusiness[] = [
     googleReviewCount: 45,
     yelpRating: 4.0,
     yelpReviewCount: 27,
-    qualificationScore: 58.3,
+    qualificationScore: 0.0,
     qualified: false,
     yearsInBusiness: 3,
-    tier: "basic",
     year: 2026,
   },
 ];

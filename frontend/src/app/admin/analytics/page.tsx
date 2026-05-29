@@ -4,7 +4,8 @@ const TIER_PRICES = { basic: 197, pro: 397, premium: 697 };
 
 function calcRevenue() {
   const purchased = SEED_BUSINESSES.filter(
-    (b) => b.qualified && (b.tier === "pro" || b.tier === "premium")
+    (b): b is typeof b & { tier: "basic" | "pro" | "premium" } =>
+      b.qualified && (b.tier === "pro" || b.tier === "premium")
   );
   return purchased.reduce((sum, b) => sum + TIER_PRICES[b.tier], 0);
 }
