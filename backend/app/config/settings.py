@@ -45,13 +45,13 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 8
 
-    # Award tier pricing
-    tier_price_basic: int = 197
-    tier_price_pro: int = 397
-    tier_price_premium: int = 697
+    # Award tier pricing (USD dollars)
+    tier_price_basic: int = 199
+    tier_price_pro: int = 249
+    tier_price_premium: int = 349
 
-    def award_name(self, category: str, year: int, neighborhood: str) -> str:
-        return f"{self.brand_name} · {category} · {year} · {neighborhood}"
+    def award_name(self, category: str, year: int, area_name: str) -> str:
+        return f"{self.brand_name} · {category} · {year} · {area_name}"
 
 
 settings = Settings()

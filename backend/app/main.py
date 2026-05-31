@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import health, businesses, qualify
+from .api import health, businesses, qualify, areas, categories, winners, admin
 from .config.settings import settings
 
 app = FastAPI(
@@ -27,3 +27,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(businesses.router, prefix="/api/v1")
 app.include_router(qualify.router, prefix="/api/v1")
+app.include_router(areas.router, prefix="/api/v1")
+app.include_router(categories.router, prefix="/api/v1")
+app.include_router(winners.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")

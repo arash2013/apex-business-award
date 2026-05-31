@@ -13,10 +13,10 @@ router = APIRouter(prefix="/businesses", tags=["businesses"])
 class BusinessOut(BaseModel):
     id: UUID
     name: str
-    category: str
-    neighborhood: str | None
-    city: str
+    slug: str | None
     state: str
+    area_id: UUID | None
+    category_id: UUID | None
     google_rating: float | None
     google_review_count: int | None
     yelp_rating: float | None
@@ -36,7 +36,7 @@ async def list_businesses(
     offset: int = Query(0),
     db: AsyncSession = Depends(get_db),
 ) -> list:
-    businesses = await business_service.get_businesses(
+    return await business_service.get_businesses(
         db,
         city=city,
         category=category,
@@ -44,7 +44,6 @@ async def list_businesses(
         limit=limit,
         offset=offset,
     )
-    return businesses
 
 
 @router.get("/{business_id}", response_model=BusinessOut)

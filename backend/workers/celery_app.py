@@ -1,6 +1,7 @@
 from celery import Celery
 
 from app.config.settings import settings
+from workers.beat_schedule import BEAT_SCHEDULE
 
 celery_app = Celery(
     "apex_workers",
@@ -16,4 +17,5 @@ celery_app.conf.update(
     timezone="America/Chicago",
     enable_utc=True,
     task_track_started=True,
+    beat_schedule=BEAT_SCHEDULE,
 )

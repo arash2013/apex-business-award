@@ -1,16 +1,25 @@
 from .base import Base, TimestampMixin
-from .business import Business
+from .area import Area
+from .category import Category
 from .review import Review, Platform
+from .business import Business
 from .award import Award, AwardAsset, AwardTier, AwardStatus
 from .outreach import Outreach, OutreachStatus
 from .user import User, UserRole
+from .customer import Customer
+from .order import Order, OrderStatus
+from .fulfillment import AwardFulfillment, FulfillmentType, FulfillmentStatus
+from .email_template import EmailTemplate
+from .crawl_job import CrawlJob, CrawlJobResult, CrawlStatus, CrawlResultAction
 
 __all__ = [
     "Base",
     "TimestampMixin",
-    "Business",
+    "Area",
+    "Category",
     "Review",
     "Platform",
+    "Business",
     "Award",
     "AwardAsset",
     "AwardTier",
@@ -19,4 +28,15 @@ __all__ = [
     "OutreachStatus",
     "User",
     "UserRole",
+    "Customer",
+    "Order",
+    "OrderStatus",
+    "AwardFulfillment",
+    "FulfillmentType",
+    "FulfillmentStatus",
+    "EmailTemplate",
+    "CrawlJob",
+    "CrawlJobResult",
+    "CrawlStatus",
+    "CrawlResultAction",
 ]

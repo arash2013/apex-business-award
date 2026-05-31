@@ -2,14 +2,19 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import Business
+from ..models import Business, Area, Category
 from .qualification import QualificationInput, compute_qualification
 
 
 async def get_business(db: AsyncSession, business_id: UUID) -> Business | None:
-    result = await db.execute(select(Business).where(Business.id == business_id))
+    result = await db.execute(
+        select(Business)
+        .where(Business.id == business_id)
+        .options(selectinload(Business.area), selectinload(Business.category))
+    )
     return result.scalar_one_or_none()
 
 
@@ -22,20 +27,23 @@ async def get_businesses(
     limit: int = 100,
     offset: int = 0,
 ) -> list[Business]:
-    query = select(Business)
+    query = select(Business).options(selectinload(Business.area), selectinload(Business.category))
+
     if city:
-        query = query.where(Business.city.ilike(f"%{city}%"))
+        query = query.join(Area, Business.area_id == Area.id).where(Area.city.ilike(f"%{city}%"))
     if category:
-        query = query.where(Business.category.ilike(f"%{category}%"))
+        query = query.join(Category, Business.category_id == Category.id).where(
+            Category.name.ilike(f"%{category}%")
+        )
     if qualified_only:
         query = query.where(Business.qualified.is_(True))
+
     query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
 async def refresh_qualification(db: AsyncSession, business: Business) -> Business:
-    """Recompute and persist qualification score for a single business."""
     inp = QualificationInput(
         google_rating=float(business.google_rating or 0),
         google_review_count=business.google_review_count or 0,

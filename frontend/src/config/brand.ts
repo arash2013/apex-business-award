@@ -13,6 +13,11 @@ export const brand = {
     background: "#FAFAF8",
   },
   domain: "apexbusinessaward.com",
+  pricing: {
+    basic: 199,
+    pro: 249,
+    premium: 349,
+  },
 } as const;
 
 export type Brand = typeof brand;

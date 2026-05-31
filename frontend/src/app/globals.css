@@ -24,3 +24,22 @@ body {
     @apply inline-flex items-center gap-1.5 bg-gold-50 text-gold-700 border border-gold-400 px-3 py-1 rounded-full text-sm font-medium;
   }
 }
+
+@keyframes shimmer-border {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.premium-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1B2B4B 0%,
+    #C9A84C 30%,
+    #A07830 50%,
+    #C9A84C 70%,
+    #1B2B4B 100%
+  );
+  background-size: 300% 100%;
+  animation: shimmer-border 3s ease-in-out infinite;
+}

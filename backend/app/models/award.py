@@ -40,17 +40,18 @@ class AssetStatus(str, enum.Enum):
 class Award(Base, TimestampMixin):
     __tablename__ = "awards"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=new_uuid
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     business_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
     )
-    platform: Mapped[Platform] = mapped_column(Enum(Platform), nullable=False)
+    area_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("areas.id", ondelete="SET NULL"), nullable=True
+    )
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+    )
+    platform: Mapped[Platform] = mapped_column(Enum(Platform, create_constraint=False), nullable=False)
     award_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    category: Mapped[str] = mapped_column(String(100), nullable=False)
-    neighborhood: Mapped[str] = mapped_column(String(100), nullable=False)
-    city: Mapped[str] = mapped_column(String(100), nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
 
     tier: Mapped[AwardTier] = mapped_column(Enum(AwardTier), nullable=False)
@@ -66,16 +67,18 @@ class Award(Base, TimestampMixin):
     amount_paid: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
 
     business: Mapped["Business"] = relationship(back_populates="awards")
+    area: Mapped["Area | None"] = relationship(back_populates="awards")
+    category: Mapped["Category | None"] = relationship(back_populates="awards")
     assets: Mapped[list["AwardAsset"]] = relationship(back_populates="award")
     outreach_records: Mapped[list["Outreach"]] = relationship(back_populates="award")
+    fulfillments: Mapped[list["AwardFulfillment"]] = relationship(back_populates="award")
+    orders: Mapped[list["Order"]] = relationship(back_populates="award")
 
 
 class AwardAsset(Base, TimestampMixin):
     __tablename__ = "award_assets"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=new_uuid
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     award_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("awards.id", ondelete="CASCADE"), nullable=False
     )

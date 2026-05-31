@@ -34,4 +34,4 @@
 - Hard cutoffs: rating ≥ 4.0, count ≥ 50, review within 12 months
 
 ## Award Tiers
-- Basic $197 | Pro $397 | Premium $697
+- Basic $199 | Pro $249 | Premium $349
