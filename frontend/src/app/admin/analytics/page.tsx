@@ -1,13 +1,12 @@
 import { SEED_BUSINESSES } from "@/lib/seed-data";
-
-const TIER_PRICES = { basic: 197, pro: 397, premium: 697 };
+import { brand } from "@/config/brand";
 
 function calcRevenue() {
   const purchased = SEED_BUSINESSES.filter(
     (b): b is typeof b & { tier: "basic" | "pro" | "premium" } =>
-      b.qualified && (b.tier === "pro" || b.tier === "premium")
+      b.qualified && b.tier != null
   );
-  return purchased.reduce((sum, b) => sum + TIER_PRICES[b.tier], 0);
+  return purchased.reduce((sum, b) => sum + brand.pricing[b.tier], 0);
 }
 
 export default function AnalyticsPage() {
