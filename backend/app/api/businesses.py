@@ -1,3 +1,4 @@
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,8 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..db import get_db
 from ..services import business_service
+from .auth import require_admin
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
+
+AdminUser = Annotated[dict[str, Any], Depends(require_admin)]
 
 
 class BusinessOut(BaseModel):
@@ -29,11 +33,11 @@ class BusinessOut(BaseModel):
 
 @router.get("", response_model=list[BusinessOut])
 async def list_businesses(
-    city: str | None = Query(None),
-    category: str | None = Query(None),
+    city: str | None = Query(None, max_length=100),
+    category: str | None = Query(None, max_length=100),
     qualified_only: bool = Query(False),
-    limit: int = Query(100, le=500),
-    offset: int = Query(0),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0, le=100_000),
     db: AsyncSession = Depends(get_db),
 ) -> list:
     return await business_service.get_businesses(
@@ -60,6 +64,7 @@ async def get_business(
 @router.post("/{business_id}/refresh-qualification", response_model=BusinessOut)
 async def refresh_business_qualification(
     business_id: UUID,
+    _: AdminUser,
     db: AsyncSession = Depends(get_db),
 ) -> object:
     biz = await business_service.get_business(db, business_id)

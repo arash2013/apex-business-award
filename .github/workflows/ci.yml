@@ -4,9 +4,26 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [develop]
+    branches: [develop, "hotfix/*"]
 
 jobs:
+  branch-policy:
+    name: Branch naming policy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Enforce feature/* branch convention
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "PR source branch: $BRANCH"
+          if [[ "$BRANCH" =~ ^(feature|fix|chore|docs|security|hotfix|refactor|test)/ ]]; then
+            echo "Branch name OK"
+          else
+            echo "ERROR: Branch '$BRANCH' does not match required pattern."
+            echo "Use one of: feature/, fix/, chore/, docs/, security/, hotfix/, refactor/, test/"
+            exit 1
+          fi
+
   backend-lint:
     name: Backend — lint & type check
     runs-on: ubuntu-latest
@@ -140,3 +157,9 @@ jobs:
           NEXT_PUBLIC_BRAND_YEAR: "2026"
           NEXT_PUBLIC_BRAND_COLOR_PRIMARY: "#1B2B4B"
           NEXT_PUBLIC_BRAND_COLOR_ACCENT: "#C9A84C"
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: ci-placeholder-not-for-production
+          AZURE_AD_CLIENT_ID: ci-placeholder
+          AZURE_AD_CLIENT_SECRET: ci-placeholder
+          AZURE_AD_TENANT_ID: ci-placeholder
+          AZURE_AD_ADMIN_ROLE: Apex.Admin

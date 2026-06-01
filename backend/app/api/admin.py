@@ -1,3 +1,4 @@
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,8 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..db import get_db
 from ..models import Area, Category, CrawlJob, CrawlStatus
 from ..models.review import Platform
+from .auth import require_admin
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+AdminUser = Annotated[dict[str, Any], Depends(require_admin)]
 
 
 class CrawlTriggerRequest(BaseModel):
@@ -19,7 +23,11 @@ class CrawlTriggerRequest(BaseModel):
 
 
 @router.post("/crawl/trigger")
-async def trigger_crawl(body: CrawlTriggerRequest, db: AsyncSession = Depends(get_db)):
+async def trigger_crawl(
+    body: CrawlTriggerRequest,
+    _: AdminUser,
+    db: AsyncSession = Depends(get_db),
+):
     area = await db.get(Area, body.area_id)
     if not area:
         raise HTTPException(status_code=404, detail="Area not found")
@@ -47,6 +55,7 @@ async def trigger_crawl(body: CrawlTriggerRequest, db: AsyncSession = Depends(ge
 
 @router.get("/crawl/jobs")
 async def list_crawl_jobs(
+    _: AdminUser,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
 ):

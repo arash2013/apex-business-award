@@ -74,10 +74,12 @@ async def _send_outreach(outreach_id: UUID) -> None:
 
 
 def _render(template: str, business: Business | None, award: Award | None) -> str:
+    import html
+
     fields = {
-        "business_name": business.name if business else "",
-        "award_tier": award.tier if award else "",
-        "award_year": str(award.year) if award else "",
+        "business_name": html.escape(business.name if business else ""),
+        "award_tier": html.escape(award.tier if award else ""),
+        "award_year": html.escape(str(award.year) if award else ""),
     }
     for key, value in fields.items():
         template = template.replace(f"{{{{{key}}}}}", value)
