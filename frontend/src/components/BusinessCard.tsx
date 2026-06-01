@@ -13,6 +13,12 @@ export interface BusinessCardProps {
   year?: number;
 }
 
+const TIER_LABELS: Record<string, string> = {
+  premium: "Premium",
+  pro: "Pro",
+  basic: "Basic",
+};
+
 export function BusinessCard({
   slug,
   name,
@@ -26,27 +32,46 @@ export function BusinessCard({
   const hasProfile = tier === "pro" || tier === "premium";
 
   const card = (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex gap-4 hover:shadow-md transition-shadow">
+    <div
+      className={`group bg-white rounded-xl border p-5 flex gap-4 transition-all duration-200 ${
+        hasProfile
+          ? "border-gray-100 hover:border-gold/50 hover:shadow-md"
+          : "border-gray-100"
+      }`}
+    >
       <AwardBadge category={category} year={year} size="sm" />
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-navy truncate">{name}</h3>
-        <p className="text-sm text-gray-500">{category} · {neighborhood}</p>
-        <div className="flex items-center gap-1 mt-1">
-          <span className="text-gold font-bold">{googleRating.toFixed(1)}</span>
-          <span className="text-yellow-400 text-sm">★</span>
-          <span className="text-xs text-gray-400">({googleReviewCount.toLocaleString()})</span>
-        </div>
-        {tier && (
-          <span
-            className={`mt-2 inline-block text-xs px-2 py-0.5 rounded-full capitalize font-medium ${
-              tier === "premium"
-                ? "bg-navy text-gold"
-                : tier === "pro"
-                ? "bg-gold-50 text-gold-700 border border-gold-400"
-                : "bg-gray-100 text-gray-600"
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <h3
+            className={`font-semibold text-navy text-sm leading-snug ${
+              hasProfile ? "group-hover:text-gold transition-colors" : ""
             }`}
           >
-            {tier}
+            {name}
+          </h3>
+          {tier && (
+            <span
+              className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                tier === "premium"
+                  ? "bg-navy text-gold"
+                  : tier === "pro"
+                  ? "bg-gold-50 text-gold-700 border border-gold-400"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {TIER_LABELS[tier] ?? tier}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">{category} · {neighborhood}</p>
+        <div className="flex items-center gap-1.5 mt-2">
+          <span className="text-gold font-bold text-sm">{googleRating.toFixed(1)}</span>
+          <span className="text-yellow-400 text-xs">★</span>
+          <span className="text-xs text-gray-400">({googleReviewCount.toLocaleString()} reviews)</span>
+        </div>
+        {hasProfile && (
+          <span className="inline-block text-xs text-gold/70 mt-2 font-medium group-hover:text-gold transition-colors">
+            View profile →
           </span>
         )}
       </div>
@@ -54,7 +79,7 @@ export function BusinessCard({
   );
 
   return hasProfile ? (
-    <Link href={`/winners/${slug}`}>{card}</Link>
+    <Link href={`/winners/${slug}`} className="block">{card}</Link>
   ) : (
     card
   );
