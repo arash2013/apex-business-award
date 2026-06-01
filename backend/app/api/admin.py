@@ -39,6 +39,7 @@ async def trigger_crawl(body: CrawlTriggerRequest, db: AsyncSession = Depends(ge
 
     # push to Celery queue
     from workers.tasks import run_crawl_job
+
     run_crawl_job.delay(str(job.id))
 
     return {"job_id": str(job.id), "status": job.status}

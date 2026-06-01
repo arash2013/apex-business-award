@@ -14,7 +14,9 @@ async def test_qualify_endpoint_qualified():
         "yelp_rating": 4.7,
         "yelp_review_count": 100,
     }
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/qualify", json=payload)
     assert response.status_code == 200
     data = response.json()
@@ -28,7 +30,9 @@ async def test_qualify_endpoint_not_qualified():
         "google_rating": 3.5,
         "google_review_count": 10,
     }
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/qualify", json=payload)
     assert response.status_code == 200
     data = response.json()

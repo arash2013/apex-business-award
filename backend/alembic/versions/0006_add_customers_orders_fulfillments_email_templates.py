@@ -4,6 +4,7 @@ Revision ID: 0006
 Revises: 0005
 Create Date: 2026-01-06 00:00:00.000000
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -26,12 +27,24 @@ def upgrade() -> None:
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("phone", sa.String(50), nullable=True),
         sa.Column("stripe_customer_id", sa.String(255), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("business_id", name="uq_customers_business_id"),
         sa.UniqueConstraint("email", name="uq_customers_email"),
-        sa.UniqueConstraint("stripe_customer_id", name="uq_customers_stripe_customer_id"),
+        sa.UniqueConstraint(
+            "stripe_customer_id", name="uq_customers_stripe_customer_id"
+        ),
         sa.ForeignKeyConstraint(["business_id"], ["businesses.id"], ondelete="CASCADE"),
     )
 
@@ -41,10 +54,16 @@ def upgrade() -> None:
         sa.Column("customer_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("award_id", postgresql.UUID(as_uuid=True), nullable=False),
         # reuses existing awardtier enum type
-        sa.Column("tier", sa.Enum("basic", "pro", "premium", name="awardtier", create_type=False), nullable=False),
+        sa.Column(
+            "tier",
+            sa.Enum("basic", "pro", "premium", name="awardtier", create_type=False),
+            nullable=False,
+        ),
         sa.Column(
             "status",
-            sa.Enum("pending", "paid", "failed", "refunded", "cancelled", name="orderstatus"),
+            sa.Enum(
+                "pending", "paid", "failed", "refunded", "cancelled", name="orderstatus"
+            ),
             nullable=False,
             server_default="pending",
         ),
@@ -53,10 +72,22 @@ def upgrade() -> None:
         sa.Column("stripe_payment_intent_id", sa.String(255), nullable=True),
         sa.Column("stripe_invoice_id", sa.String(255), nullable=True),
         sa.Column("paid_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("stripe_payment_intent_id", name="uq_orders_stripe_payment_intent_id"),
+        sa.UniqueConstraint(
+            "stripe_payment_intent_id", name="uq_orders_stripe_payment_intent_id"
+        ),
         sa.ForeignKeyConstraint(["customer_id"], ["customers.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["award_id"], ["awards.id"], ondelete="RESTRICT"),
     )
@@ -68,12 +99,25 @@ def upgrade() -> None:
         sa.Column("award_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "fulfillment_type",
-            sa.Enum("digital_badge", "certificate", "social_kit", "plaque", name="fulfillmenttype"),
+            sa.Enum(
+                "digital_badge",
+                "certificate",
+                "social_kit",
+                "plaque",
+                name="fulfillmenttype",
+            ),
             nullable=False,
         ),
         sa.Column(
             "status",
-            sa.Enum("pending", "processing", "generated", "shipped", "delivered", name="fulfillmentstatus"),
+            sa.Enum(
+                "pending",
+                "processing",
+                "generated",
+                "shipped",
+                "delivered",
+                name="fulfillmentstatus",
+            ),
             nullable=False,
             server_default="pending",
         ),
@@ -81,8 +125,18 @@ def upgrade() -> None:
         sa.Column("tracking_number", sa.String(100), nullable=True),
         sa.Column("shipped_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("delivered_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.ForeignKeyConstraint(["order_id"], ["orders.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["award_id"], ["awards.id"], ondelete="CASCADE"),
@@ -95,10 +149,22 @@ def upgrade() -> None:
         sa.Column("subject", sa.String(255), nullable=False),
         sa.Column("body_html", sa.Text, nullable=False),
         sa.Column("body_text", sa.Text, nullable=False),
-        sa.Column("variables", postgresql.JSONB, nullable=False, server_default="'[]'::jsonb"),
+        sa.Column(
+            "variables", postgresql.JSONB, nullable=False, server_default="'[]'::jsonb"
+        ),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name", name="uq_email_templates_name"),
     )

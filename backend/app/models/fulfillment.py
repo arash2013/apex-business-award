@@ -27,14 +27,18 @@ class FulfillmentStatus(str, enum.Enum):
 class AwardFulfillment(Base, TimestampMixin):
     __tablename__ = "award_fulfillments"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=new_uuid
+    )
     order_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
     )
     award_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("awards.id", ondelete="CASCADE"), nullable=False
     )
-    fulfillment_type: Mapped[FulfillmentType] = mapped_column(Enum(FulfillmentType), nullable=False)
+    fulfillment_type: Mapped[FulfillmentType] = mapped_column(
+        Enum(FulfillmentType), nullable=False
+    )
     status: Mapped[FulfillmentStatus] = mapped_column(
         Enum(FulfillmentStatus), nullable=False, server_default="pending"
     )

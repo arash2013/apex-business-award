@@ -14,6 +14,7 @@ def run_crawl_job(self, job_id: str) -> dict:
     """Execute a single CrawlJob by ID."""
     from workers.crawl_worker import _run_crawl
     from uuid import UUID
+
     asyncio.run(_run_crawl(UUID(job_id)))
     return {"job_id": job_id, "status": "completed"}
 
@@ -27,8 +28,16 @@ def schedule_nightly_crawls(platform: str = "google") -> dict:
 
     async def _enqueue():
         async with AsyncSessionLocal() as db:
-            areas = (await db.execute(select(Area).where(Area.is_active.is_(True)))).scalars().all()
-            cats = (await db.execute(select(Category).where(Category.is_active.is_(True)))).scalars().all()
+            areas = (
+                (await db.execute(select(Area).where(Area.is_active.is_(True))))
+                .scalars()
+                .all()
+            )
+            cats = (
+                (await db.execute(select(Category).where(Category.is_active.is_(True))))
+                .scalars()
+                .all()
+            )
             now = datetime.now(timezone.utc)
             job_ids = []
             for area in areas:
@@ -56,12 +65,15 @@ def send_outreach_email(outreach_id: str) -> dict:
     """Send a single outreach email via SendGrid."""
     from workers.email_worker import _send_outreach
     from uuid import UUID
+
     asyncio.run(_send_outreach(UUID(outreach_id)))
     return {"status": "sent", "outreach_id": outreach_id}
 
 
 @celery_app.task(name="workers.tasks.send_outreach_follow_up")
-def send_outreach_follow_up(business_id: str, award_id: str, email: str, step: int) -> dict:
+def send_outreach_follow_up(
+    business_id: str, award_id: str, email: str, step: int
+) -> dict:
     """Create and send a follow-up outreach email for a specific step."""
     from app.db import AsyncSessionLocal
     from app.models import Outreach, OutreachStatus

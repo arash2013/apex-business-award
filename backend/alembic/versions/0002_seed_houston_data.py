@@ -5,6 +5,7 @@ Revises: 0001
 Create Date: 2026-01-02 00:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import uuid
@@ -239,8 +240,7 @@ def upgrade() -> None:
 
     for b in BUSINESSES:
         conn.execute(
-            sa.text(
-                """
+            sa.text("""
                 INSERT INTO businesses (
                     id, name, category, neighborhood, address, city, state, zip, phone, website,
                     google_rating, google_review_count, google_last_review_date,
@@ -256,8 +256,7 @@ def upgrade() -> None:
                     :created_at, :updated_at
                 )
                 ON CONFLICT DO NOTHING
-                """
-            ),
+                """),
             {
                 "id": b["id"],
                 "name": b["name"],

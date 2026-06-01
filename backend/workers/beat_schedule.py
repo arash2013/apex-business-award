@@ -1,4 +1,5 @@
 """Celery Beat schedule — nightly crawl across all active area×category combos."""
+
 from celery.schedules import crontab
 
 BEAT_SCHEDULE = {

@@ -27,10 +27,14 @@ async def get_businesses(
     limit: int = 100,
     offset: int = 0,
 ) -> list[Business]:
-    query = select(Business).options(selectinload(Business.area), selectinload(Business.category))
+    query = select(Business).options(
+        selectinload(Business.area), selectinload(Business.category)
+    )
 
     if city:
-        query = query.join(Area, Business.area_id == Area.id).where(Area.city.ilike(f"%{city}%"))
+        query = query.join(Area, Business.area_id == Area.id).where(
+            Area.city.ilike(f"%{city}%")
+        )
     if category:
         query = query.join(Category, Business.category_id == Category.id).where(
             Category.name.ilike(f"%{category}%")

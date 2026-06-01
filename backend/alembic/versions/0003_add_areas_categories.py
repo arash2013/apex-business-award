@@ -4,6 +4,7 @@ Revision ID: 0003
 Revises: 0002
 Create Date: 2026-01-03 00:00:00.000000
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -28,8 +29,18 @@ def upgrade() -> None:
         sa.Column("lng", sa.Numeric(9, 6), nullable=True),
         sa.Column("radius_miles", sa.Integer, nullable=False, server_default="10"),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -43,8 +54,18 @@ def upgrade() -> None:
         sa.Column("yelp_category_alias", sa.String(100), nullable=True),
         sa.Column("icon", sa.String(50), nullable=True),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("slug", name="uq_categories_slug"),
     )

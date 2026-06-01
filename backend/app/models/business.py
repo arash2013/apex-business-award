@@ -2,7 +2,16 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,7 +21,9 @@ from .base import Base, TimestampMixin, new_uuid
 class Business(Base, TimestampMixin):
     __tablename__ = "businesses"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=new_uuid
+    )
     google_place_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     yelp_id: Mapped[str | None] = mapped_column(String(255), unique=True)
 
@@ -28,7 +39,9 @@ class Business(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("areas.id", ondelete="SET NULL"), nullable=True
     )
     category_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("categories.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     google_rating: Mapped[Decimal | None] = mapped_column(Numeric(2, 1))
@@ -50,5 +63,9 @@ class Business(Base, TimestampMixin):
     reviews: Mapped[list["Review"]] = relationship(back_populates="business")
     awards: Mapped[list["Award"]] = relationship(back_populates="business")
     outreach_records: Mapped[list["Outreach"]] = relationship(back_populates="business")
-    customer: Mapped["Customer | None"] = relationship(back_populates="business", uselist=False)
-    crawl_job_results: Mapped[list["CrawlJobResult"]] = relationship(back_populates="business")
+    customer: Mapped["Customer | None"] = relationship(
+        back_populates="business", uselist=False
+    )
+    crawl_job_results: Mapped[list["CrawlJobResult"]] = relationship(
+        back_populates="business"
+    )

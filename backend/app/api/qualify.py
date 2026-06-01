@@ -3,7 +3,11 @@ from datetime import date
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ..services.qualification import QualificationInput, QualificationResult, compute_qualification
+from ..services.qualification import (
+    QualificationInput,
+    QualificationResult,
+    compute_qualification,
+)
 
 router = APIRouter(prefix="/qualify", tags=["qualification"])
 

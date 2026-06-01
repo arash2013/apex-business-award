@@ -10,7 +10,9 @@ from .base import Base, TimestampMixin, new_uuid
 class Customer(Base, TimestampMixin):
     __tablename__ = "customers"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=new_uuid
+    )
     business_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("businesses.id", ondelete="CASCADE"),

@@ -27,7 +27,9 @@ def _serialize_winner(b: Business, award: Award) -> dict:
         "category_slug": b.category.slug if b.category else None,
         "google_rating": float(b.google_rating) if b.google_rating else None,
         "google_review_count": b.google_review_count,
-        "qualification_score": float(b.qualification_score) if b.qualification_score else None,
+        "qualification_score": (
+            float(b.qualification_score) if b.qualification_score else None
+        ),
         "award_id": str(award.id),
         "tier": award.tier,
         "year": award.year,
@@ -51,30 +53,36 @@ async def list_winners(
 ):
     stmt = (
         select(Business, Award)
-        .join(Award, and_(
-            Award.business_id == Business.id,
-            Award.status.in_(ACTIVE_STATUSES),
-            Award.year == year,
-        ))
+        .join(
+            Award,
+            and_(
+                Award.business_id == Business.id,
+                Award.status.in_(ACTIVE_STATUSES),
+                Award.year == year,
+            ),
+        )
         .options(selectinload(Business.area), selectinload(Business.category))
     )
 
     if area_id:
         stmt = stmt.where(Business.area_id == area_id)
     elif city:
-        stmt = stmt.join(Area, Business.area_id == Area.id).where(Area.city.ilike(f"%{city}%"))
+        stmt = stmt.join(Area, Business.area_id == Area.id).where(
+            Area.city.ilike(f"%{city}%")
+        )
 
     if category_id:
         stmt = stmt.where(Business.category_id == category_id)
     elif category_slug:
-        stmt = stmt.join(Category, Business.category_id == Category.id).where(Category.slug == category_slug)
+        stmt = stmt.join(Category, Business.category_id == Category.id).where(
+            Category.slug == category_slug
+        )
 
     if tier:
         stmt = stmt.where(Award.tier == tier)
 
     stmt = (
-        stmt
-        .order_by(Business.qualification_score.desc().nulls_last())
+        stmt.order_by(Business.qualification_score.desc().nulls_last())
         .offset((page - 1) * limit)
         .limit(limit)
     )
@@ -108,13 +116,20 @@ async def get_winner(slug: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Winner not found")
 
     active_award = next(
-        (a for a in biz.awards if a.status in ACTIVE_STATUSES and a.tier in (AwardTier.pro, AwardTier.premium)),
+        (
+            a
+            for a in biz.awards
+            if a.status in ACTIVE_STATUSES
+            and a.tier in (AwardTier.pro, AwardTier.premium)
+        ),
         None,
     )
     if not active_award:
         raise HTTPException(status_code=404, detail="Winner not found")
 
-    top_reviews = sorted(biz.reviews, key=lambda r: r.review_date or "", reverse=True)[:5]
+    top_reviews = sorted(biz.reviews, key=lambda r: r.review_date or "", reverse=True)[
+        :5
+    ]
 
     return {
         **_serialize_winner(biz, active_award),

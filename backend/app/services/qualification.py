@@ -34,9 +34,7 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
         reasons.append(f"Google rating {data.google_rating} is below 4.0")
 
     if data.google_review_count < 50:
-        reasons.append(
-            f"Google review count {data.google_review_count} is below 50"
-        )
+        reasons.append(f"Google review count {data.google_review_count} is below 50")
 
     today = date.today()
     if data.google_last_review_date is None:
@@ -61,6 +59,7 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
 
     # 2. Review count (0–25 pts): log scale, caps at 500 reviews
     import math
+
     count = min(data.google_review_count, 500)
     # 50 reviews → ~0 pts, 500 reviews → 25 pts
     count_pts = max(0.0, (math.log10(count / 50) / math.log10(10)) * 25.0)

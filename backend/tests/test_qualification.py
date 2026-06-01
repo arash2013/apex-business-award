@@ -71,9 +71,15 @@ def test_breakdown_keys_present():
 
 
 def test_recency_scoring():
-    r_3mo = compute_qualification(_input(google_last_review_date=date.today() - timedelta(days=60)))
-    r_6mo = compute_qualification(_input(google_last_review_date=date.today() - timedelta(days=150)))
-    r_12mo = compute_qualification(_input(google_last_review_date=date.today() - timedelta(days=300)))
+    r_3mo = compute_qualification(
+        _input(google_last_review_date=date.today() - timedelta(days=60))
+    )
+    r_6mo = compute_qualification(
+        _input(google_last_review_date=date.today() - timedelta(days=150))
+    )
+    r_12mo = compute_qualification(
+        _input(google_last_review_date=date.today() - timedelta(days=300))
+    )
     assert r_3mo.breakdown["recency"] == 20.0
     assert r_6mo.breakdown["recency"] == 15.0
     assert r_12mo.breakdown["recency"] == 10.0

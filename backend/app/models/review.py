@@ -21,7 +21,9 @@ class Review(Base, TimestampMixin):
         UUID(as_uuid=True), primary_key=True, default=new_uuid
     )
     business_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("businesses.id", ondelete="CASCADE"),
+        nullable=False,
     )
     platform: Mapped[Platform] = mapped_column(Enum(Platform), nullable=False)
     reviewer_name: Mapped[str | None] = mapped_column(String(255))

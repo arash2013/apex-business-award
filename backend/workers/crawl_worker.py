@@ -1,4 +1,5 @@
 """Crawl worker — SerpAPI + qualification scoring per crawl job."""
+
 import logging
 from datetime import datetime, timezone
 from uuid import UUID
@@ -7,7 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import AsyncSessionLocal
-from app.models import Area, Category, Business, CrawlJob, CrawlJobResult, CrawlStatus, CrawlResultAction
+from app.models import (
+    Area,
+    Category,
+    Business,
+    CrawlJob,
+    CrawlJobResult,
+    CrawlStatus,
+    CrawlResultAction,
+)
 from app.config.settings import settings
 from workers.qualification import QualificationInput, compute_qualification
 
@@ -27,7 +36,9 @@ async def _run_crawl(job_id: UUID) -> None:
 
         try:
             area = await db.get(Area, job.area_id) if job.area_id else None
-            category = await db.get(Category, job.category_id) if job.category_id else None
+            category = (
+                await db.get(Category, job.category_id) if job.category_id else None
+            )
 
             # TODO: replace stub with real SerpAPI call
             # raw_results = await _fetch_serpapi(area, category, job.platform)
@@ -48,7 +59,12 @@ async def _run_crawl(job_id: UUID) -> None:
             job.completed_at = datetime.now(timezone.utc)
             await db.commit()
 
-            logger.info("CrawlJob %s completed: %d found, %d qualified", job_id, found, qualified_count)
+            logger.info(
+                "CrawlJob %s completed: %d found, %d qualified",
+                job_id,
+                found,
+                qualified_count,
+            )
 
         except Exception as exc:
             job.status = CrawlStatus.failed
@@ -89,7 +105,9 @@ async def _upsert_business(
     else:
         biz.google_rating = raw.get("rating", biz.google_rating)
         biz.google_review_count = raw.get("review_count", biz.google_review_count)
-        biz.google_last_review_date = raw.get("last_review_date", biz.google_last_review_date)
+        biz.google_last_review_date = raw.get(
+            "last_review_date", biz.google_last_review_date
+        )
         action = CrawlResultAction.updated
 
     # score and qualify
@@ -97,7 +115,11 @@ async def _upsert_business(
         google_rating=float(biz.google_rating or 0),
         google_review_count=biz.google_review_count or 0,
         google_last_review_date=biz.google_last_review_date,
-        google_owner_response_rate=float(biz.google_owner_response_rate) if biz.google_owner_response_rate else None,
+        google_owner_response_rate=(
+            float(biz.google_owner_response_rate)
+            if biz.google_owner_response_rate
+            else None
+        ),
         yelp_rating=float(biz.yelp_rating) if biz.yelp_rating else None,
         yelp_review_count=biz.yelp_review_count,
     )

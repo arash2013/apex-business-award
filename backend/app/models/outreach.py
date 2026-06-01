@@ -26,7 +26,9 @@ class Outreach(Base, TimestampMixin):
         UUID(as_uuid=True), primary_key=True, default=new_uuid
     )
     business_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("businesses.id", ondelete="CASCADE"),
+        nullable=False,
     )
     award_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("awards.id", ondelete="CASCADE"), nullable=False

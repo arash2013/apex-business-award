@@ -4,6 +4,7 @@ Revision ID: 0005
 Revises: 0004
 Create Date: 2026-01-05 00:00:00.000000
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -17,14 +18,23 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("awards", sa.Column("area_id", postgresql.UUID(as_uuid=True), nullable=True))
+    op.add_column(
+        "awards", sa.Column("area_id", postgresql.UUID(as_uuid=True), nullable=True)
+    )
     op.create_foreign_key(
         "fk_awards_area_id", "awards", "areas", ["area_id"], ["id"], ondelete="SET NULL"
     )
 
-    op.add_column("awards", sa.Column("category_id", postgresql.UUID(as_uuid=True), nullable=True))
+    op.add_column(
+        "awards", sa.Column("category_id", postgresql.UUID(as_uuid=True), nullable=True)
+    )
     op.create_foreign_key(
-        "fk_awards_category_id", "awards", "categories", ["category_id"], ["id"], ondelete="SET NULL"
+        "fk_awards_category_id",
+        "awards",
+        "categories",
+        ["category_id"],
+        ["id"],
+        ondelete="SET NULL",
     )
 
     op.drop_column("awards", "category")
