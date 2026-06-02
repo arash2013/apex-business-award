@@ -15,7 +15,7 @@ class QualifyRequest(BaseModel):
     google_rating: float = Field(..., ge=0.0, le=5.0)
     google_review_count: int = Field(..., ge=0, le=1_000_000)
     google_last_review_date: date | None = None
-    google_owner_response_rate: float | None = Field(None, ge=0.0, le=1.0)
+    google_owner_response_rate: float | None = Field(None, ge=0.0, le=100.0)
     yelp_rating: float | None = Field(None, ge=0.0, le=5.0)
     yelp_review_count: int | None = Field(None, ge=0, le=1_000_000)
 
