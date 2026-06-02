@@ -7,6 +7,25 @@ on:
     branches: ["feature/*", "hotfix/*"]
 
 jobs:
+  terraform-test:
+    name: Terraform tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      - name: Terraform Init (no backend)
+        working-directory: terraform
+        run: terraform init -backend=false
+
+      - name: Terraform Test
+        working-directory: terraform
+        run: terraform test
+
   branch-policy:
     name: Branch naming policy
     runs-on: ubuntu-latest
