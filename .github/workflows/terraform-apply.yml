@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   apply:
-    name: Apply (prod)
+    name: Apply
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -38,6 +38,5 @@ jobs:
         working-directory: terraform
         run: |
           terraform apply \
-            -var-file=environments/prod.tfvars \
             -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" \
             -auto-approve

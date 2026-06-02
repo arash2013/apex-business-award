@@ -27,8 +27,10 @@ docker compose -f docker-compose.dev.yml exec api alembic upgrade head
 ## Structure
 
 ```
-frontend/   Next.js 14 app router  →  Vercel
-backend/    FastAPI + Celery        →  Railway
+frontend/   Next.js 14 app router  →  Azure Static Web Apps
+backend/    FastAPI + Celery        →  Azure Container Apps
+terraform/  Infrastructure as Code  →  Azure (single prod environment)
+scripts/    bootstrap-azure.sh      →  one-time OIDC + role setup
 ```
 
 ## Development

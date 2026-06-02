@@ -1,7 +1,7 @@
 version: "3.9"
 
-# Production deployments use Railway (backend) + Vercel (frontend).
-# This file is for reference / self-hosted prod only.
+# Production runs on Azure Container Apps (backend) + Azure Static Web Apps (frontend).
+# This file is for reference / self-hosted testing only.
 
 services:
   api:

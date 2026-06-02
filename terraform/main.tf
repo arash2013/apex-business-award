@@ -18,19 +18,19 @@ terraform {
 
 provider "azurerm" {
   features {}
+  subscription_id = "bab197e5-e20e-4b6c-9677-6c0c6ee35ece"
 }
 
 resource "azurerm_resource_group" "main" {
-  name     = "apex-${var.environment}-rg"
+  name     = "apex-prod-rg"
   location = var.location
   tags     = local.tags
 }
 
 locals {
   tags = {
-    project     = "apex-business-award"
-    environment = var.environment
-    managed_by  = "terraform"
+    project    = "apex-business-award"
+    managed_by = "terraform"
   }
 }
 
@@ -40,7 +40,6 @@ module "container_registry" {
   source              = "./modules/container_registry"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   tags                = local.tags
 }
 
@@ -48,7 +47,6 @@ module "database" {
   source              = "./modules/database"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   sku_name            = var.db_sku
   admin_password      = var.db_admin_password
   tags                = local.tags
@@ -58,7 +56,6 @@ module "redis" {
   source              = "./modules/redis"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   sku_name            = var.redis_sku
   tags                = local.tags
 }
@@ -67,7 +64,6 @@ module "key_vault" {
   source              = "./modules/key_vault"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   tenant_id           = data.azurerm_client_config.current.tenant_id
   tags                = local.tags
 }
@@ -76,7 +72,6 @@ module "storage" {
   source              = "./modules/storage"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   tags                = local.tags
 }
 
@@ -84,7 +79,6 @@ module "static_web_app" {
   source              = "./modules/static_web_app"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.static_web_app_location
-  environment         = var.environment
   sku_tier            = var.static_web_app_sku
   tags                = local.tags
 }
@@ -93,12 +87,12 @@ module "container_apps" {
   source              = "./modules/container_apps"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  environment         = var.environment
   acr_login_server    = module.container_registry.login_server
   acr_admin_username  = module.container_registry.admin_username
   acr_admin_password  = module.container_registry.admin_password
   database_url        = module.database.connection_string
   redis_url           = module.redis.connection_string
+  image_tag           = var.container_image_tag
   tags                = local.tags
 }
 

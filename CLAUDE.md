@@ -7,14 +7,16 @@
 - Colors: Navy #1B2B4B, Gold #C9A84C, Background #FAFAF8
 
 ## Repo Layout
-- `frontend/` — Next.js 14 app router (Vercel)
-- `backend/` — FastAPI Python 3.11+ (Railway)
+- `frontend/` — Next.js 14 app router (Azure Static Web Apps)
+- `backend/` — FastAPI Python 3.11+ (Azure Container Apps)
+- `terraform/` — single-environment Azure infra (prod only)
+- `scripts/bootstrap-azure.sh` — one-time OIDC + role setup
 - `docker-compose.dev.yml` — local: postgres + redis + api + frontend
 
 ## Git Rules
-- `main` → prod | `develop` → dev
-- All work on `feature/*`, PR into `develop`
-- Never push directly to main or develop
+- `main` → prod (single-branch workflow)
+- All work on `feature/*`, PR into `main`
+- Never push directly to main
 
 ## Coding Conventions
 - Python: Black, type hints, Pydantic v2

@@ -1,5 +1,5 @@
 resource "azurerm_log_analytics_workspace" "logs" {
-  name                = "apex-${var.environment}-logs"
+  name                = "apex-prod-logs"
   resource_group_name = var.resource_group_name
   location            = var.location
   sku                 = "PerGB2018"
@@ -8,7 +8,7 @@ resource "azurerm_log_analytics_workspace" "logs" {
 }
 
 resource "azurerm_container_app_environment" "env" {
-  name                       = "apex-${var.environment}-cae"
+  name                       = "apex-prod-cae"
   resource_group_name        = var.resource_group_name
   location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
@@ -17,7 +17,7 @@ resource "azurerm_container_app_environment" "env" {
 
 # FastAPI Backend
 resource "azurerm_container_app" "api" {
-  name                         = "apex-${var.environment}-api"
+  name                         = "apex-prod-api"
   resource_group_name          = var.resource_group_name
   container_app_environment_id = azurerm_container_app_environment.env.id
   revision_mode                = "Single"
@@ -43,8 +43,8 @@ resource "azurerm_container_app" "api" {
   }
 
   template {
-    min_replicas = var.environment == "prod" ? 1 : 0
-    max_replicas = var.environment == "prod" ? 5 : 2
+    min_replicas = 1
+    max_replicas = 5
 
     container {
       name   = "api"
@@ -62,7 +62,7 @@ resource "azurerm_container_app" "api" {
       }
       env {
         name  = "ENVIRONMENT"
-        value = var.environment
+        value = "prod"
       }
     }
   }
@@ -75,11 +75,17 @@ resource "azurerm_container_app" "api" {
       latest_revision = true
     }
   }
+
+  # Image tag is managed by the deploy workflow (az containerapp update),
+  # not by terraform apply, to decouple infra from app release cadence.
+  lifecycle {
+    ignore_changes = [template[0].container[0].image]
+  }
 }
 
 # Celery Worker
 resource "azurerm_container_app" "worker" {
-  name                         = "apex-${var.environment}-worker"
+  name                         = "apex-prod-worker"
   resource_group_name          = var.resource_group_name
   container_app_environment_id = azurerm_container_app_environment.env.id
   revision_mode                = "Single"
@@ -105,7 +111,6 @@ resource "azurerm_container_app" "worker" {
   }
 
   template {
-    # Scale to zero when Redis queue is empty
     min_replicas = 0
     max_replicas = 3
 
@@ -126,15 +131,22 @@ resource "azurerm_container_app" "worker" {
       }
     }
 
-    # KEDA scaler on Redis list depth
+    # KEDA scaler — scale out when Redis celery queue depth > 5
     custom_scale_rule {
       name             = "redis-queue-depth"
       custom_rule_type = "redis"
       metadata = {
-        listName    = "celery"
-        listLength  = "5"
-        address     = "redis-url"
+        listName   = "celery"
+        listLength = "5"
+      }
+      authentication {
+        secret_name       = "redis-url"
+        trigger_parameter = "address"
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].container[0].image]
   }
 }
