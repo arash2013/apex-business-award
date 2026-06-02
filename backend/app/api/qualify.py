@@ -1,11 +1,10 @@
 from datetime import date
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..services.qualification import (
     QualificationInput,
-    QualificationResult,
     compute_qualification,
 )
 
@@ -13,12 +12,12 @@ router = APIRouter(prefix="/qualify", tags=["qualification"])
 
 
 class QualifyRequest(BaseModel):
-    google_rating: float
-    google_review_count: int
+    google_rating: float = Field(..., ge=0.0, le=5.0)
+    google_review_count: int = Field(..., ge=0, le=1_000_000)
     google_last_review_date: date | None = None
-    google_owner_response_rate: float | None = None
-    yelp_rating: float | None = None
-    yelp_review_count: int | None = None
+    google_owner_response_rate: float | None = Field(None, ge=0.0, le=1.0)
+    yelp_rating: float | None = Field(None, ge=0.0, le=5.0)
+    yelp_review_count: int | None = Field(None, ge=0, le=1_000_000)
 
 
 class QualifyResponse(BaseModel):

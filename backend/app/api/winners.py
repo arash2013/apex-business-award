@@ -42,13 +42,13 @@ def _serialize_winner(b: Business, award: Award) -> dict:
 @router.get("/winners")
 async def list_winners(
     area_id: UUID | None = Query(None),
-    city: str | None = Query(None),
+    city: str | None = Query(None, max_length=100, pattern=r"^[a-zA-Z\s\-\.]+$"),
     category_id: UUID | None = Query(None),
-    category_slug: str | None = Query(None),
-    year: int = Query(settings.brand_year),
+    category_slug: str | None = Query(None, max_length=100),
+    year: int = Query(settings.brand_year, ge=2020, le=2100),
     tier: AwardTier | None = Query(None),
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, le=100),
+    page: int = Query(1, ge=1, le=1000),
+    limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = (

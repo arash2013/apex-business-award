@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SessionProvider, signOut, useSession } from "next-auth/react";
 import { brand } from "@/config/brand";
 
 const NAV_ITEMS = [
@@ -61,44 +62,54 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AdminSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-60 bg-navy text-white flex flex-col shrink-0 shadow-xl">
-        <div className="p-5 border-b border-white/10">
-          <p className="text-gold font-bold text-sm tracking-tight">{brand.name}</p>
-          <p className="text-white/40 text-xs mt-0.5">Admin Dashboard</p>
-        </div>
-        <nav className="flex-1 p-3 space-y-0.5">
-          {NAV_ITEMS.map(({ href, label, icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-white/15 text-white"
-                    : "text-white/55 hover:bg-white/10 hover:text-white/90"
-                }`}
-              >
-                <span className={active ? "text-gold" : "text-white/35"}>{icon}</span>
-                {label}
-                {active && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-4 border-t border-white/10">
+    <aside className="w-60 bg-navy text-white flex flex-col shrink-0 shadow-xl">
+      <div className="p-5 border-b border-white/10">
+        <p className="text-gold font-bold text-sm tracking-tight">{brand.name}</p>
+        <p className="text-white/40 text-xs mt-0.5">Admin Dashboard</p>
+      </div>
+      <nav className="flex-1 p-3 space-y-0.5">
+        {NAV_ITEMS.map(({ href, label, icon }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? "bg-white/15 text-white"
+                  : "text-white/55 hover:bg-white/10 hover:text-white/90"
+              }`}
+            >
+              <span className={active ? "text-gold" : "text-white/35"}>{icon}</span>
+              {label}
+              {active && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="p-4 border-t border-white/10 space-y-3">
+        {session?.user?.name && (
+          <p className="text-xs text-white/40 truncate" title={session.user.name}>
+            {session.user.name}
+          </p>
+        )}
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            className="flex items-center gap-2 text-xs text-white/30 hover:text-white/70 transition-colors"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign out
+          </button>
           <Link
             href="/"
             className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"
@@ -109,10 +120,22 @@ export default function AdminLayout({
             View public site
           </Link>
         </div>
-      </aside>
+      </div>
+    </aside>
+  );
+}
 
-      {/* Content */}
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SessionProvider>
+      <div className="min-h-screen flex bg-gray-50">
+        <AdminSidebar />
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </SessionProvider>
   );
 }

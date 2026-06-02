@@ -1,4 +1,7 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_INSECURE_SECRET = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -40,15 +43,31 @@ class Settings(BaseSettings):
     stripe_pro_price_id: str = ""
     stripe_premium_price_id: str = ""
 
-    # Auth
-    secret_key: str = "change-me-in-production"
+    # Auth (legacy JWT — kept for internal signing only)
+    secret_key: str = _INSECURE_SECRET
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 8
+
+    # Azure AD (admin endpoint protection)
+    azure_tenant_id: str = ""
+    azure_client_id: str = ""
+    azure_admin_role: str = "Apex.Admin"
+
+    # Dev-only API-key fallback (used when Azure AD is not configured)
+    admin_api_key: str = ""
 
     # Award tier pricing (USD dollars)
     tier_price_basic: int = 199
     tier_price_pro: int = 249
     tier_price_premium: int = 349
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        if self.environment == "production" and self.secret_key == _INSECURE_SECRET:
+            raise ValueError(
+                "SECRET_KEY must be overridden with a strong random value in production"
+            )
+        return self
 
     def award_name(self, category: str, year: int, area_name: str) -> str:
         return f"{self.brand_name} · {category} · {year} · {area_name}"
