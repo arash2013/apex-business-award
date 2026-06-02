@@ -48,9 +48,8 @@ cd backend && pytest
 ## Git Workflow
 
 - `main` → production (auto-deploy)
-- `develop` → staging (auto-deploy)
-- `feature/*` → all new work, PR into `develop`
-- `hotfix/*` → urgent fixes, PR into `main` then backmerge
+- `feature/*` → all new work, PR into `main`
+- `hotfix/*` → urgent fixes, PR into `main`
 
 ## Award Tiers
 

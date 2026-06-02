@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   push:
-    branches: [develop, "hotfix/*"]
+    branches: ["feature/*", "hotfix/*"]
 
 jobs:
   branch-policy:
@@ -16,11 +16,11 @@ jobs:
         run: |
           BRANCH="${{ github.head_ref }}"
           echo "PR source branch: $BRANCH"
-          if [[ "$BRANCH" =~ ^(feature|fix|chore|docs|security|hotfix|refactor|test)/ ]]; then
+          if [[ "$BRANCH" =~ ^(feature|hotfix)/ ]]; then
             echo "Branch name OK"
           else
             echo "ERROR: Branch '$BRANCH' does not match required pattern."
-            echo "Use one of: feature/, fix/, chore/, docs/, security/, hotfix/, refactor/, test/"
+            echo "Use feature/* or hotfix/*"
             exit 1
           fi
 
