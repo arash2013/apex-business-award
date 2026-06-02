@@ -10,7 +10,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "apex-tfstate-rg"
-    storage_account_name = "apextfstate${var.environment}"
+    storage_account_name = "apextfstateprod"
     container_name       = "tfstate"
     key                  = "apex.tfstate"
   }
