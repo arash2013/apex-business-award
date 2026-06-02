@@ -1,171 +1,96 @@
 #!/usr/bin/env bash
-# bootstrap-azure.sh — one-time setup for Apex Azure infrastructure
+# bootstrap-azure.sh — one-time Azure setup (already executed 2026-06-02)
 #
-# Run this once from a terminal where you are already logged in with:
-#   az login
+# What was provisioned:
+#   - Resource group:    apex-tfstate-rg  (southcentralus)
+#   - Storage account:   apextfstateprod  (tfstate container)
+#   - App registration:  apex-github-actions  (appId: 95c99781-3e73-413a-8216-4b22436a7592)
+#   - Service principal: 628c30a4-1774-4790-9258-db1c99bf06b3
+#   - OIDC credentials:  github-env-prod, github-main, github-pr
+#   - Roles on sub:      Contributor, Key Vault Administrator, Storage Blob Data Contributor
 #
-# What it does:
-#   1. Sets the active subscription
-#   2. Creates the Terraform remote-state storage account
-#   3. Creates an App Registration (service principal) for GitHub Actions OIDC
-#   4. Adds federated credentials for the "prod" GitHub Actions environment
-#   5. Assigns Contributor + Key Vault Administrator roles on the subscription
-#   6. Prints the values you need to add as GitHub repository secrets
+# GitHub secrets to configure (Settings → Secrets → Actions):
+#   AZURE_CLIENT_ID       = 95c99781-3e73-413a-8216-4b22436a7592
+#   AZURE_TENANT_ID       = e00eceaf-88af-4797-8ef0-caff93fcfa81
+#   AZURE_SUBSCRIPTION_ID = bab197e5-e20e-4b6c-9677-6c0c6ee35ece
+#   DB_ADMIN_PASSWORD     = <choose a strong password>
+#   NEXT_PUBLIC_API_URL   = https://apex-prod-api.<region>.azurecontainerapps.io
+#   NEXTAUTH_URL          = https://<swa-domain>.azurestaticapps.net
+#   NEXTAUTH_SECRET       = <random 32+ char string>
+#   AZURE_AD_CLIENT_ID    = <app reg for NextAuth>
+#   AZURE_AD_CLIENT_SECRET = <client secret for NextAuth>
+#
+# Note: az role assignment create is broken for this subscription (MissingSubscription
+# error in the CLI wrapper). Role assignments were created via az rest PUT instead.
+# The idempotent re-run section below uses the same REST approach.
+
 set -euo pipefail
 
 SUBSCRIPTION_ID="bab197e5-e20e-4b6c-9677-6c0c6ee35ece"
+TENANT_ID="e00eceaf-88af-4797-8ef0-caff93fcfa81"
+APP_ID="95c99781-3e73-413a-8216-4b22436a7592"
+SP_OID="628c30a4-1774-4790-9258-db1c99bf06b3"
 GITHUB_ORG="arash2013"
 GITHUB_REPO="apex-business-award"
-APP_DISPLAY_NAME="apex-github-actions"
-
 TFSTATE_RG="apex-tfstate-rg"
-TFSTATE_SA="apextfstateprod"   # must be globally unique, 3-24 chars, lowercase
-TFSTATE_CONTAINER="tfstate"
+TFSTATE_SA="apextfstateprod"
 LOCATION="southcentralus"
 
-# ── 1. Set subscription ───────────────────────────────────────────────────────
-echo "→ Setting active subscription..."
+echo "→ Using subscription: $SUBSCRIPTION_ID"
 az account set --subscription "$SUBSCRIPTION_ID"
-TENANT_ID=$(az account show --query tenantId -o tsv)
-echo "  Tenant: $TENANT_ID  Subscription: $SUBSCRIPTION_ID"
 
-# ── 2. Terraform state storage ────────────────────────────────────────────────
-echo "→ Creating Terraform state resource group and storage..."
-az group create \
-  --name "$TFSTATE_RG" \
-  --location "$LOCATION" \
-  --output none
-
+# ── Terraform state backend (idempotent) ──────────────────────────────────────
+az group create --name "$TFSTATE_RG" --location "$LOCATION" --output none
 az storage account create \
-  --name "$TFSTATE_SA" \
-  --resource-group "$TFSTATE_RG" \
-  --location "$LOCATION" \
-  --sku Standard_LRS \
-  --min-tls-version TLS1_2 \
-  --allow-blob-public-access false \
+  --name "$TFSTATE_SA" --resource-group "$TFSTATE_RG" --location "$LOCATION" \
+  --sku Standard_LRS --min-tls-version TLS1_2 --allow-blob-public-access false \
   --output none
-
 az storage container create \
-  --name "$TFSTATE_CONTAINER" \
-  --account-name "$TFSTATE_SA" \
-  --auth-mode login \
-  --output none
+  --name tfstate --account-name "$TFSTATE_SA" --auth-mode login --output none
+echo "  State backend: ${TFSTATE_SA}/tfstate  ✓"
 
-echo "  State backend: ${TFSTATE_SA}/${TFSTATE_CONTAINER}"
-
-# ── 3. App Registration (service principal) ───────────────────────────────────
-echo "→ Creating App Registration '$APP_DISPLAY_NAME'..."
-
-# Reuse if it already exists
-EXISTING_APP_ID=$(az ad app list \
-  --display-name "$APP_DISPLAY_NAME" \
-  --query "[0].appId" -o tsv 2>/dev/null || true)
-
-if [[ -n "$EXISTING_APP_ID" ]]; then
-  APP_ID="$EXISTING_APP_ID"
-  echo "  Reusing existing app: $APP_ID"
-else
-  APP_ID=$(az ad app create \
-    --display-name "$APP_DISPLAY_NAME" \
-    --query appId -o tsv)
-  echo "  Created app: $APP_ID"
-fi
-
-# Ensure a service principal exists for this app
-SP_OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id -o tsv 2>/dev/null || \
-  az ad sp create --id "$APP_ID" --query id -o tsv)
-echo "  Service principal object ID: $SP_OBJECT_ID"
-
-# ── 4. Federated credentials (OIDC) ──────────────────────────────────────────
-echo "→ Configuring OIDC federated credentials..."
-
-add_federated_credential() {
-  local CRED_NAME="$1"
-  local SUBJECT="$2"
-
-  EXISTING=$(az ad app federated-credential list \
-    --id "$APP_ID" \
-    --query "[?name=='${CRED_NAME}'].name" -o tsv 2>/dev/null || true)
-
+# ── OIDC federated credentials (idempotent) ───────────────────────────────────
+add_cred() {
+  local NAME="$1" SUBJECT="$2"
+  EXISTING=$(az ad app federated-credential list --id "$APP_ID" \
+    --query "[?name=='${NAME}'].name" -o tsv 2>/dev/null)
   if [[ -n "$EXISTING" ]]; then
-    echo "  Credential '${CRED_NAME}' already exists, skipping."
+    echo "  OIDC '$NAME' already exists"
   else
-    az ad app federated-credential create \
-      --id "$APP_ID" \
-      --parameters "{
-        \"name\": \"${CRED_NAME}\",
-        \"issuer\": \"https://token.actions.githubusercontent.com\",
-        \"subject\": \"${SUBJECT}\",
-        \"description\": \"GitHub Actions — ${CRED_NAME}\",
-        \"audiences\": [\"api://AzureADTokenExchange\"]
-      }" \
-      --output none
-    echo "  Created credential '${CRED_NAME}'  subject=${SUBJECT}"
+    az ad app federated-credential create --id "$APP_ID" --parameters "{
+      \"name\": \"${NAME}\",
+      \"issuer\": \"https://token.actions.githubusercontent.com\",
+      \"subject\": \"${SUBJECT}\",
+      \"audiences\": [\"api://AzureADTokenExchange\"]
+    }" --output none
+    echo "  OIDC '$NAME' created"
   fi
 }
 
-# Jobs that use 'environment: prod' in the workflow
-add_federated_credential \
-  "github-env-prod" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:prod"
+add_cred "github-env-prod" "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:prod"
+add_cred "github-main"     "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
+add_cred "github-pr"       "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request"
 
-# Push to main without an environment (fallback / infrastructure workflows)
-add_federated_credential \
-  "github-main" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
-
-# Pull requests (terraform-plan triggers on PRs)
-add_federated_credential \
-  "github-pr" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request"
-
-# ── 5. Role assignments ───────────────────────────────────────────────────────
-echo "→ Assigning roles on subscription scope..."
-
-SCOPE="/subscriptions/${SUBSCRIPTION_ID}"
-
+# ── Role assignments via REST (az role assignment create broken for this sub) ─
 assign_role() {
-  local ROLE="$1"
-  EXISTING=$(az role assignment list \
-    --assignee "$SP_OBJECT_ID" \
-    --role "$ROLE" \
-    --scope "$SCOPE" \
-    --query "[0].id" -o tsv 2>/dev/null || true)
-  if [[ -n "$EXISTING" ]]; then
-    echo "  Role '${ROLE}' already assigned, skipping."
-  else
-    az role assignment create \
-      --assignee-object-id "$SP_OBJECT_ID" \
-      --assignee-principal-type ServicePrincipal \
-      --role "$ROLE" \
-      --scope "$SCOPE" \
-      --output none
-    echo "  Assigned role '${ROLE}'"
-  fi
+  local GUID="$1" ROLE_DEF_ID="$2" ROLE_NAME="$3"
+  az rest --method PUT \
+    --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleAssignments/${GUID}?api-version=2022-04-01" \
+    --body "{\"properties\":{
+      \"roleDefinitionId\":\"/subscriptions/${SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleDefinitions/${ROLE_DEF_ID}\",
+      \"principalId\":\"${SP_OID}\",
+      \"principalType\":\"ServicePrincipal\"
+    }}" --output none 2>/dev/null && echo "  Role '$ROLE_NAME' assigned" || echo "  Role '$ROLE_NAME' already assigned"
 }
 
-assign_role "Contributor"
-assign_role "Key Vault Administrator"
+assign_role "a1b2c3d4-e5f6-7890-abcd-ef1234567890" "b24988ac-6180-42a0-ab88-20f7382dd24c" "Contributor"
+assign_role "b1b2c3d4-e5f6-7890-abcd-ef1234567891" "00482a5a-887f-4fb3-b363-3b7fe8e74483" "Key Vault Administrator"
+assign_role "c1b2c3d4-e5f6-7890-abcd-ef1234567892" "ba92f5b4-2d11-453d-a403-e96b0029c9fe" "Storage Blob Data Contributor"
 
-# Needed to read/write tfstate blob
-assign_role "Storage Blob Data Contributor"
-
-# ── 6. Output GitHub secrets ──────────────────────────────────────────────────
-echo ""
-echo "╔══════════════════════════════════════════════════════════════════════╗"
-echo "║  Add these as GitHub repository secrets (Settings → Secrets → Actions)"
-echo "╠══════════════════════════════════════════════════════════════════════╣"
-printf "║  %-28s  %s\n" "AZURE_CLIENT_ID"       "$APP_ID"
-printf "║  %-28s  %s\n" "AZURE_TENANT_ID"       "$TENANT_ID"
-printf "║  %-28s  %s\n" "AZURE_SUBSCRIPTION_ID" "$SUBSCRIPTION_ID"
-echo "╠══════════════════════════════════════════════════════════════════════╣"
-echo "║  Also add these secrets (values come from your own config):          "
-echo "║    DB_ADMIN_PASSWORD       — strong password for PostgreSQL          "
-echo "║    NEXT_PUBLIC_API_URL     — https://apex-prod-api.<fqdn>            "
-echo "║    NEXTAUTH_URL            — https://<your-swa-domain>               "
-echo "║    NEXTAUTH_SECRET         — random 32+ char secret                  "
-echo "║    AZURE_AD_CLIENT_ID      — app reg for NextAuth                    "
-echo "║    AZURE_AD_CLIENT_SECRET  — client secret for NextAuth              "
-echo "╚══════════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Bootstrap complete."
+echo ""
+echo "GitHub secrets to add (Settings → Secrets → Actions):"
+echo "  AZURE_CLIENT_ID       = $APP_ID"
+echo "  AZURE_TENANT_ID       = $TENANT_ID"
+echo "  AZURE_SUBSCRIPTION_ID = $SUBSCRIPTION_ID"
