@@ -1,6 +1,5 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { brand } from "@/config/brand";
@@ -8,6 +7,10 @@ import { brand } from "@/config/brand";
 function LoginForm() {
   const params = useSearchParams();
   const error = params.get("error");
+
+  function handleSignIn() {
+    window.location.href = "/.auth/login/aad?post_login_redirect_uri=/admin/pipeline";
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
@@ -24,17 +27,13 @@ function LoginForm() {
       {error && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">
-            {error === "AccessDenied"
-              ? "Your account does not have admin access. Contact the site owner."
-              : "Sign-in failed. Please try again."}
+            Your account does not have admin access. Contact the site owner.
           </p>
         </div>
       )}
 
       <button
-        onClick={() =>
-          signIn("azure-ad", { callbackUrl: "/admin/pipeline" })
-        }
+        onClick={handleSignIn}
         className="w-full flex items-center justify-center gap-3 bg-navy text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-navy/90 active:scale-[0.98] transition-all"
       >
         {/* Microsoft icon */}

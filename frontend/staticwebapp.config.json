@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/e00eceaf-88af-4797-8ef0-caff93fcfa81/v2.0",
+          "clientIdSettingName": "AZURE_AD_CLIENT_ID",
+          "clientSecretSettingName": "AZURE_AD_CLIENT_SECRET"
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "route": "/admin/login",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/admin/unauthorized",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/admin/*",
+      "allowedRoles": ["Apex.Admin"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad?post_login_redirect_uri=/.referrer",
+      "statusCode": 302
+    },
+    "403": {
+      "redirect": "/admin/unauthorized",
+      "statusCode": 302
+    }
+  }
+}

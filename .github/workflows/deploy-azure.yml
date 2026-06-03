@@ -99,6 +99,16 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "SWA_TOKEN=$TOKEN" >> $GITHUB_ENV
 
+      # AD credentials are SWA app settings (runtime), not build-time env vars
+      - name: Configure SWA app settings
+        run: |
+          az staticwebapp appsettings set \
+            --name $SWA_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --setting-names \
+              AZURE_AD_CLIENT_ID="${{ secrets.AZURE_AD_CLIENT_ID }}" \
+              AZURE_AD_CLIENT_SECRET="${{ secrets.AZURE_AD_CLIENT_SECRET }}"
+
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -109,17 +119,11 @@ jobs:
           api_location: ""
           output_location: ""
         env:
-          NEXT_PUBLIC_API_URL:              ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_BRAND_NAME:           "Apex Business Award"
-          NEXT_PUBLIC_BRAND_SHORT:          "Apex"
-          NEXT_PUBLIC_BRAND_TAGLINE:        "Recognizing Excellence in Local Business"
-          NEXT_PUBLIC_BRAND_CITY:           "Houston"
-          NEXT_PUBLIC_BRAND_YEAR:           "2026"
-          NEXT_PUBLIC_BRAND_COLOR_PRIMARY:  "#1B2B4B"
-          NEXT_PUBLIC_BRAND_COLOR_ACCENT:   "#C9A84C"
-          NEXTAUTH_URL:                     ${{ secrets.NEXTAUTH_URL }}
-          NEXTAUTH_SECRET:                  ${{ secrets.NEXTAUTH_SECRET }}
-          AZURE_AD_CLIENT_ID:               ${{ secrets.AZURE_AD_CLIENT_ID }}
-          AZURE_AD_CLIENT_SECRET:           ${{ secrets.AZURE_AD_CLIENT_SECRET }}
-          AZURE_AD_TENANT_ID:               ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_AD_ADMIN_ROLE:              "Apex.Admin"
+          NEXT_PUBLIC_API_URL:             ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_BRAND_NAME:          "Apex Business Award"
+          NEXT_PUBLIC_BRAND_SHORT:         "Apex"
+          NEXT_PUBLIC_BRAND_TAGLINE:       "Recognizing Excellence in Local Business"
+          NEXT_PUBLIC_BRAND_CITY:          "Houston"
+          NEXT_PUBLIC_BRAND_YEAR:          "2026"
+          NEXT_PUBLIC_BRAND_COLOR_PRIMARY: "#1B2B4B"
+          NEXT_PUBLIC_BRAND_COLOR_ACCENT:  "#C9A84C"

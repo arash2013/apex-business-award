@@ -176,9 +176,3 @@ jobs:
           NEXT_PUBLIC_BRAND_YEAR: "2026"
           NEXT_PUBLIC_BRAND_COLOR_PRIMARY: "#1B2B4B"
           NEXT_PUBLIC_BRAND_COLOR_ACCENT: "#C9A84C"
-          NEXTAUTH_URL: http://localhost:3000
-          NEXTAUTH_SECRET: ci-placeholder-not-for-production
-          AZURE_AD_CLIENT_ID: ci-placeholder
-          AZURE_AD_CLIENT_SECRET: ci-placeholder
-          AZURE_AD_TENANT_ID: ci-placeholder
-          AZURE_AD_ADMIN_ROLE: Apex.Admin
