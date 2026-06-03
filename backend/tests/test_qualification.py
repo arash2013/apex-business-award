@@ -91,8 +91,6 @@ def test_no_yelp_data_gives_zero_yelp_bonus():
 
 
 # ── Boundary conditions ───────────────────────────────────────────────────────
-
-
 def test_rating_exactly_at_cutoff_qualifies():
     result = compute_qualification(_input(google_rating=4.0))
     assert result.qualified is True
@@ -115,8 +113,6 @@ def test_multiple_disqualification_reasons():
 
 
 # ── Owner response rate scoring ───────────────────────────────────────────────
-
-
 def test_owner_response_rate_zero_gives_no_pts():
     result = compute_qualification(_input(google_owner_response_rate=0.0))
     assert result.breakdown["owner_response"] == 0.0
@@ -138,8 +134,6 @@ def test_owner_response_rate_50_pct():
 
 
 # ── Yelp bonus edge cases ─────────────────────────────────────────────────────
-
-
 def test_yelp_high_rating_low_count_gives_partial_credit():
     # rating ≥ 4.0 but count < 20 → 5 pts
     result = compute_qualification(_input(yelp_rating=4.5, yelp_review_count=10))
@@ -157,8 +151,6 @@ def test_yelp_full_bonus_requires_rating_and_count():
 
 
 # ── Review count scoring ──────────────────────────────────────────────────────
-
-
 def test_review_count_caps_at_500():
     r_500 = compute_qualification(_input(google_review_count=500))
     r_999 = compute_qualification(_input(google_review_count=999))
@@ -167,8 +159,6 @@ def test_review_count_caps_at_500():
 
 
 # ── Recency boundary: exactly 90 / 180 / 365 days ────────────────────────────
-
-
 def test_recency_exactly_90_days():
     result = compute_qualification(
         _input(google_last_review_date=date.today() - timedelta(days=90))

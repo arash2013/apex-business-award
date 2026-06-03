@@ -43,7 +43,7 @@ run "non_ssl_port_disabled" {
   }
 
   assert {
-    condition     = azurerm_redis_cache.redis.enable_non_ssl_port == false
+    condition     = azurerm_redis_cache.redis.non_ssl_port_enabled == false
     error_message = "Non-SSL port (6379) must be disabled; use SSL port 6380 only"
   }
 }
