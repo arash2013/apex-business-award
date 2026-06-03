@@ -103,9 +103,7 @@ def test_review_count_exactly_at_cutoff_qualifies():
 
 
 def test_multiple_disqualification_reasons():
-    result = compute_qualification(
-        _input(google_rating=3.5, google_review_count=10)
-    )
+    result = compute_qualification(_input(google_rating=3.5, google_review_count=10))
     assert result.qualified is False
     assert len(result.disqualification_reasons) == 2
     assert result.score == 0.0
