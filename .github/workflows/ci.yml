@@ -16,7 +16,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "~1.6"
+          terraform_version: "~1.15"
 
       - name: Terraform Init (no backend)
         working-directory: terraform
