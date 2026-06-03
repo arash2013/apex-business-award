@@ -46,3 +46,9 @@ Thumbs.db
 htmlcov/
 .coverage
 coverage.xml
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log

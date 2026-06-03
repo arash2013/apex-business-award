@@ -12,7 +12,7 @@ run "storage_account_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {
@@ -25,7 +25,7 @@ run "no_dev_in_name" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {
@@ -38,7 +38,7 @@ run "replication_is_grs" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {
@@ -51,7 +51,7 @@ run "minimum_tls_version_is_1_2" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {
@@ -64,7 +64,7 @@ run "award_assets_container_is_private" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {
@@ -77,7 +77,7 @@ run "public_badges_container_allows_blob_read" {
   command = plan
 
   module {
-    source = "../modules/storage"
+    source = "./modules/storage"
   }
 
   assert {

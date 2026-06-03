@@ -13,7 +13,7 @@ run "redis_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/redis"
+    source = "./modules/redis"
   }
 
   assert {
@@ -26,7 +26,7 @@ run "no_dev_in_name" {
   command = plan
 
   module {
-    source = "../modules/redis"
+    source = "./modules/redis"
   }
 
   assert {
@@ -39,7 +39,7 @@ run "non_ssl_port_disabled" {
   command = plan
 
   module {
-    source = "../modules/redis"
+    source = "./modules/redis"
   }
 
   assert {
@@ -52,7 +52,7 @@ run "minimum_tls_version_is_1_2" {
   command = plan
 
   module {
-    source = "../modules/redis"
+    source = "./modules/redis"
   }
 
   assert {
@@ -65,7 +65,7 @@ run "sku_is_standard_c1" {
   command = plan
 
   module {
-    source = "../modules/redis"
+    source = "./modules/redis"
   }
 
   assert {

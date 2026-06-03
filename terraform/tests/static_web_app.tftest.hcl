@@ -13,7 +13,7 @@ run "swa_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/static_web_app"
+    source = "./modules/static_web_app"
   }
 
   assert {
@@ -26,7 +26,7 @@ run "no_dev_in_name" {
   command = plan
 
   module {
-    source = "../modules/static_web_app"
+    source = "./modules/static_web_app"
   }
 
   assert {
@@ -39,7 +39,7 @@ run "sku_tier_is_standard" {
   command = plan
 
   module {
-    source = "../modules/static_web_app"
+    source = "./modules/static_web_app"
   }
 
   assert {

@@ -12,7 +12,7 @@ run "acr_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/container_registry"
+    source = "./modules/container_registry"
   }
 
   assert {
@@ -25,7 +25,7 @@ run "no_dev_in_name" {
   command = plan
 
   module {
-    source = "../modules/container_registry"
+    source = "./modules/container_registry"
   }
 
   assert {
@@ -38,7 +38,7 @@ run "sku_is_basic" {
   command = plan
 
   module {
-    source = "../modules/container_registry"
+    source = "./modules/container_registry"
   }
 
   assert {
@@ -51,7 +51,7 @@ run "admin_access_enabled" {
   command = plan
 
   module {
-    source = "../modules/container_registry"
+    source = "./modules/container_registry"
   }
 
   assert {

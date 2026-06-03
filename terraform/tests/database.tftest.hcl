@@ -14,7 +14,7 @@ run "server_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {
@@ -27,7 +27,7 @@ run "database_name_is_apex_prod" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {
@@ -40,7 +40,7 @@ run "no_dev_in_any_name" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {
@@ -58,7 +58,7 @@ run "postgres_version_is_16" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {
@@ -71,7 +71,7 @@ run "database_charset_is_utf8" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {
@@ -84,7 +84,7 @@ run "azure_services_firewall_rule_exists" {
   command = plan
 
   module {
-    source = "../modules/database"
+    source = "./modules/database"
   }
 
   assert {

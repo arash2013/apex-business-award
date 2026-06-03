@@ -17,7 +17,7 @@ run "api_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -30,7 +30,7 @@ run "worker_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -43,7 +43,7 @@ run "no_dev_in_any_name" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -71,7 +71,7 @@ run "api_has_external_ingress_on_port_8000" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -89,7 +89,7 @@ run "api_scaling_is_prod" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -107,7 +107,7 @@ run "worker_scales_to_zero" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {
@@ -125,7 +125,7 @@ run "environment_var_is_prod" {
   command = plan
 
   module {
-    source = "../modules/container_apps"
+    source = "./modules/container_apps"
   }
 
   assert {

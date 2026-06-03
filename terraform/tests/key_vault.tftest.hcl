@@ -20,7 +20,7 @@ run "key_vault_name_is_prod" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
@@ -33,7 +33,7 @@ run "no_dev_in_name" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
@@ -46,7 +46,7 @@ run "purge_protection_enabled" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
@@ -59,7 +59,7 @@ run "soft_delete_retention_is_7_days" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
@@ -72,7 +72,7 @@ run "sku_is_standard" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
@@ -85,7 +85,7 @@ run "terraform_access_policy_has_required_permissions" {
   command = plan
 
   module {
-    source = "../modules/key_vault"
+    source = "./modules/key_vault"
   }
 
   assert {
