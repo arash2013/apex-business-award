@@ -1,5 +1,5 @@
 resource "azurerm_postgresql_flexible_server" "db" {
-  name                   = "apex-${var.environment}-pg"
+  name                   = "apex-prod-pg"
   resource_group_name    = var.resource_group_name
   location               = var.location
   version                = "16"
@@ -13,7 +13,7 @@ resource "azurerm_postgresql_flexible_server" "db" {
 }
 
 resource "azurerm_postgresql_flexible_server_database" "apex" {
-  name      = "apex_${var.environment}"
+  name      = "apex_prod"
   server_id = azurerm_postgresql_flexible_server.db.id
   charset   = "UTF8"
   collation = "en_US.utf8"

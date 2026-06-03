@@ -1,0 +1,7 @@
+location                = "southcentralus"
+static_web_app_location = "centralus"
+db_sku                  = "GP_Standard_D2s_v3"
+redis_sku               = "Standard"
+static_web_app_sku      = "Standard"
+container_image_tag     = "latest"
+# db_admin_password must be supplied via CI/CD: -var="db_admin_password=$SECRET"

@@ -1,9 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { SessionProvider, signOut, useSession } from "next-auth/react";
 import { brand } from "@/config/brand";
+
+interface SwaUser {
+  userDetails: string;
+  userRoles: string[];
+  identityProvider: string;
+}
+
+function useSwaUser(): SwaUser | null {
+  const [user, setUser] = useState<SwaUser | null>(null);
+  useEffect(() => {
+    fetch("/.auth/me")
+      .then((r) => r.json())
+      .then((d) => setUser(d.clientPrincipal ?? null))
+      .catch(() => null);
+  }, []);
+  return user;
+}
 
 const NAV_ITEMS = [
   {
@@ -64,7 +81,11 @@ const NAV_ITEMS = [
 
 function AdminSidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const user = useSwaUser();
+
+  function handleSignOut() {
+    window.location.href = "/.auth/logout?post_logout_redirect_uri=/admin/login";
+  }
 
   return (
     <aside className="w-60 bg-navy text-white flex flex-col shrink-0 shadow-xl">
@@ -95,14 +116,14 @@ function AdminSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-white/10 space-y-3">
-        {session?.user?.name && (
-          <p className="text-xs text-white/40 truncate" title={session.user.name}>
-            {session.user.name}
+        {user?.userDetails && (
+          <p className="text-xs text-white/40 truncate" title={user.userDetails}>
+            {user.userDetails}
           </p>
         )}
         <div className="flex flex-col gap-1">
           <button
-            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            onClick={handleSignOut}
             className="flex items-center gap-2 text-xs text-white/30 hover:text-white/70 transition-colors"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,11 +152,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider>
-      <div className="min-h-screen flex bg-gray-50">
-        <AdminSidebar />
-        <main className="flex-1 overflow-auto">{children}</main>
-      </div>
-    </SessionProvider>
+    <div className="min-h-screen flex bg-gray-50">
+      <AdminSidebar />
+      <main className="flex-1 overflow-auto">{children}</main>
+    </div>
   );
 }

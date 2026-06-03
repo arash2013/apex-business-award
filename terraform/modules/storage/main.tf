@@ -1,9 +1,9 @@
 resource "azurerm_storage_account" "assets" {
-  name                     = "apex${var.environment}assets"
+  name                     = "apexprodassets"
   resource_group_name      = var.resource_group_name
   location                 = var.location
   account_tier             = "Standard"
-  account_replication_type = var.environment == "prod" ? "GRS" : "LRS"
+  account_replication_type = "GRS"
   min_tls_version          = "TLS1_2"
   tags                     = var.tags
 }

@@ -141,5 +141,11 @@ async def test_qualify_endpoint_response_shape():
         response = await client.post("/api/v1/qualify", json=payload)
     assert response.status_code == 200
     data = response.json()
-    for key in ("google_rating", "review_count", "recency", "owner_response", "yelp_bonus"):
+    for key in (
+        "google_rating",
+        "review_count",
+        "recency",
+        "owner_response",
+        "yelp_bonus",
+    ):
         assert key in data["breakdown"], f"Missing breakdown key: {key}"

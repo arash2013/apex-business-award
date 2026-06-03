@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   apply:
-    name: Apply (prod)
+    name: Apply
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -21,7 +21,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "~1.6"
+          terraform_version: "~1.15"
 
       - name: Azure Login
         uses: azure/login@v2
@@ -38,6 +38,5 @@ jobs:
         working-directory: terraform
         run: |
           terraform apply \
-            -var-file=environments/prod.tfvars \
             -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" \
             -auto-approve
