@@ -21,10 +21,6 @@ pydantic-settings==2.7.0
 # HTTP client
 httpx==0.28.1
 
-# Scraping
-playwright==1.49.0
-serpapi==0.1.5
-
 # Email
 sendgrid==6.11.0
 
