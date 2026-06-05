@@ -9,6 +9,8 @@
 6. [Environment Variables Reference](#environment-variables-reference)
 7. [Scaling Path — Azure](#scaling-path--azure)
 8. [Scaling Path — AWS](#scaling-path--aws)
+9. [Award Tiers](#award-tiers)
+10. [Data Flow](#data-flow)
 
 ---
 
@@ -156,6 +158,8 @@ hotfix/*      ← urgent fixes, PR into main
 | Google Cloud | console.cloud.google.com | Places API key | GCP console → Credentials |
 | Yelp | yelp.com/developers | Fusion API key | Yelp developer dashboard |
 | GitHub | github.com | Source control + CI | GitHub settings |
+| SerpAPI _(scale)_ | serpapi.com | Google search scraping | SerpAPI dashboard |
+| BrightData _(scale)_ | brightdata.com | Residential proxies for Yelp at scale | BrightData dashboard |
 
 ### GitHub Secrets (for CI)
 
@@ -181,6 +185,7 @@ Set these in **Vercel → Project → Settings → Environment Variables**:
 | `NEXT_PUBLIC_BRAND_COLOR_ACCENT` | `#C9A84C` |
 | `NEXTAUTH_URL` | Your Vercel production URL |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
+| `JWT_SECRET` | Must match backend `SECRET_KEY` |
 
 ### Railway Environment Variables
 
@@ -203,6 +208,11 @@ Set these in **Railway → Project → Variables** (shared across all services):
 | `STRIPE_PRO_PRICE_ID` | Stripe dashboard → Products |
 | `STRIPE_PREMIUM_PRICE_ID` | Stripe dashboard → Products |
 | `ADMIN_API_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `BRAND_NAME` | `Apex Business Award` |
+| `BRAND_SHORT` | `Apex` |
+| `BRAND_YEAR` | `2026` |
+| `SERPAPI_KEY` | _(blank until needed at scale)_ |
+| `BRIGHTDATA_PROXY_URL` | _(blank until needed at scale)_ |
 
 ---
 
@@ -228,9 +238,7 @@ Full list of all variables. See `.env.example` for local dev values.
 | `STRIPE_BASIC_PRICE_ID` | Yes (prod) | Stripe Price ID for $199 Basic tier |
 | `STRIPE_PRO_PRICE_ID` | Yes (prod) | Stripe Price ID for $249 Pro tier |
 | `STRIPE_PREMIUM_PRICE_ID` | Yes (prod) | Stripe Price ID for $349 Premium tier |
-| `ADMIN_API_KEY` | Dev only | API key fallback when Azure AD is not configured |
-| `AZURE_TENANT_ID` | Prod only | Azure AD tenant (admin endpoint protection) |
-| `AZURE_CLIENT_ID` | Prod only | Azure AD app client ID |
+| `ADMIN_API_KEY` | No | API key for internal service-to-service calls |
 
 ### Frontend (`frontend/.env.development`)
 
@@ -239,9 +247,7 @@ Full list of all variables. See `.env.example` for local dev values.
 | `NEXT_PUBLIC_API_URL` | Yes | Backend API base URL |
 | `NEXTAUTH_URL` | Yes | Full URL of this Next.js app |
 | `NEXTAUTH_SECRET` | Yes | NextAuth signing secret |
-| `AZURE_AD_CLIENT_ID` | Prod only | Azure AD app client ID |
-| `AZURE_AD_CLIENT_SECRET` | Prod only | Azure AD app client secret |
-| `AZURE_AD_TENANT_ID` | Prod only | Azure AD tenant ID |
+| `JWT_SECRET` | Yes | Shared JWT signing secret — must match backend `SECRET_KEY` |
 
 ---
 
@@ -290,8 +296,8 @@ The full Terraform config is preserved in `infra/azure/` for when you're ready t
 | Worker Container App | `apex-prod-worker` |
 | Static Web App | `apex-prod-swa` |
 | Key Vault | _(see `infra/azure/modules/key_vault/main.tf`)_ |
-| Subscription ID | `bab197e5-e20e-4b6c-9677-6c0c6ee35ece` |
-| Tenant ID | `e00eceaf-88af-4797-8ef0-caff93fcfa81` |
+| Subscription ID | `<your-azure-subscription-id>` |
+| Tenant ID | `<your-azure-tenant-id>` |
 
 ---
 
@@ -335,12 +341,44 @@ Celery Beat (scheduler)
 ### Purchase Flow
 
 ```
-User fills award form (Next.js)
+User selects tier on pricing page (Next.js)
   └─ POST /api/v1/orders (FastAPI)
+       └─ Lookup business + award record
+       └─ Create Customer record if not exists
+       └─ Create Order record (status: pending)
        └─ Create Stripe PaymentIntent
        └─ Return client_secret to frontend
   └─ Stripe Elements (frontend) → charge card
   └─ Stripe webhook → POST /api/v1/webhooks/stripe
-       └─ Mark order paid
-       └─ send_outreach_email task → SendGrid
+       └─ Verify webhook signature
+       └─ Mark Order status: paid
+       └─ Mark Award status: purchased
+       └─ Create AwardFulfillment records per deliverable
+       └─ generate_assets task → PDF certificate + badge + social kit
+       └─ send_confirmation_email task → SendGrid
+       └─ If Premium: create plaque_order → fulfillment queue
 ```
+
+### Outreach Flow
+
+```
+Celery Beat (nightly, after crawl completes)
+  └─ find_newly_qualified_businesses task
+       └─ For each qualified business with no prior outreach:
+            └─ Create Award record (status: offered)
+            └─ Create Outreach record (sequence_step: 1)
+            └─ Render email template with personalization fields
+            └─ Send via SendGrid
+            └─ Schedule step 2: countdown = 4 days
+            └─ Schedule step 3: countdown = 10 days
+```
+
+---
+
+## Award Tiers
+
+| Tier | Price | Includes |
+|------|-------|---------|
+| Basic | $199 | Digital badge, PDF certificate, Basic directory listing |
+| Pro | $249 | Everything in Basic + Full profile page + Social media kit |
+| Premium | $349 | Everything in Pro + Physical plaque (mailed) |
