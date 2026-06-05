@@ -11,9 +11,9 @@ build/
 venv/
 env/
 .env
+.env.development
+.env.production
 !.env.example
-!.env.development
-!.env.production
 
 # Node
 node_modules/
