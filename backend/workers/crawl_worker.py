@@ -147,9 +147,7 @@ async def _fetch_last_review_date(
     return None
 
 
-async def _fetch_yelp(
-    client: httpx.AsyncClient, name: str, address: str
-) -> dict:
+async def _fetch_yelp(client: httpx.AsyncClient, name: str, address: str) -> dict:
     """Return yelp_rating and yelp_review_count, or empty dict if unavailable."""
     if not settings.yelp_api_key or not address:
         return {}
