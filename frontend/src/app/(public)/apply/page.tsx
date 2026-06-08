@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { brand } from "@/config/brand";
+import QualifyForm from "./QualifyForm";
 
 export const metadata: Metadata = {
   title: "Check Your Qualification",
@@ -63,27 +64,8 @@ export default function ApplyPage() {
         ))}
       </div>
 
-      {/* Form */}
-      <form className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-5 mb-6">
-        <div>
-          <label className="block text-sm font-semibold text-navy mb-2">
-            Google Maps URL
-          </label>
-          <input
-            type="url"
-            name="google_maps_url"
-            placeholder="https://maps.google.com/?cid=..."
-            className="input-base"
-          />
-          <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-            Open <strong className="text-navy">Google Maps</strong>, find your
-            business, click your listing, and copy the URL from the address bar.
-          </p>
-        </div>
-        <button type="submit" className="btn-primary w-full text-center">
-          Run Qualification Check
-        </button>
-      </form>
+      {/* Form + results */}
+      <QualifyForm />
 
       {/* What we check */}
       <div className="rounded-xl bg-white border border-gray-100 p-5">
