@@ -11,6 +11,11 @@ from httpx import AsyncClient, ASGITransport
 
 from app.main import app
 from app.db import get_db
+from app.api.auth import require_admin
+
+
+def _mock_admin() -> dict:
+    return {"sub": "test", "roles": ["Apex.Admin"]}
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
@@ -164,6 +169,7 @@ async def test_refresh_qualification_found():
     with patch("app.services.business_service.get_business", new=AsyncMock(return_value=original)), \
          patch("app.services.business_service.refresh_qualification", new=AsyncMock(return_value=refreshed)):
         app.dependency_overrides[get_db] = _mock_db
+        app.dependency_overrides[require_admin] = _mock_admin
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(f"/api/v1/businesses/{biz_id}/refresh-qualification")
         app.dependency_overrides.clear()
@@ -176,6 +182,7 @@ async def test_refresh_qualification_found():
 async def test_refresh_qualification_not_found():
     with patch("app.services.business_service.get_business", new=AsyncMock(return_value=None)):
         app.dependency_overrides[get_db] = _mock_db
+        app.dependency_overrides[require_admin] = _mock_admin
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(f"/api/v1/businesses/{uuid4()}/refresh-qualification")
         app.dependency_overrides.clear()
