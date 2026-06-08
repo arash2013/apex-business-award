@@ -7,11 +7,20 @@
 - Colors: Navy #1B2B4B, Gold #C9A84C, Background #FAFAF8
 
 ## Repo Layout
-- `frontend/` — Next.js 14 app router (Azure Static Web Apps)
-- `backend/` — FastAPI Python 3.11+ (Azure Container Apps)
-- `terraform/` — single-environment Azure infra (prod only)
-- `scripts/bootstrap-azure.sh` — one-time OIDC + role setup
+- `frontend/` — Next.js 14 app router (Vercel)
+- `backend/` — FastAPI Python 3.11+ (Railway — api, worker, beat services)
+- `infra/azure/` — Terraform for Azure (reserved for scaling; not active)
+- `infra/scripts/` — Azure OIDC bootstrap (reserved for scaling)
 - `docker-compose.dev.yml` — local: postgres + redis + api + frontend
+- `ARCHITECTURE.md` — full system design, accounts, env vars, scaling path
+
+## Production Hosting (Starter Stack ~$5–30/mo)
+- Frontend: Vercel (auto-deploy from main)
+- Backend: Railway (api + worker + beat services, auto-deploy from main)
+- Database: Neon PostgreSQL (serverless)
+- Cache/Queue: Upstash Redis (serverless)
+- Email: SendGrid (free tier)
+- Payments: Stripe
 
 ## Git Rules
 - `main` → prod (single-branch workflow)
