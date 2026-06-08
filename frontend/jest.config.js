@@ -7,7 +7,16 @@ const config = {
   },
   testMatch: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
   transform: {
-    "^.+\\.(ts|tsx|js|jsx)$": "babel-jest",
+    "^.+\\.(ts|tsx|js|jsx)$": [
+      "babel-jest",
+      {
+        presets: [
+          ["@babel/preset-env", { targets: { node: "current" } }],
+          ["@babel/preset-react", { runtime: "automatic" }],
+          "@babel/preset-typescript",
+        ],
+      },
+    ],
   },
   transformIgnorePatterns: ["/node_modules/(?!(.*\\.mjs$))"],
 };
