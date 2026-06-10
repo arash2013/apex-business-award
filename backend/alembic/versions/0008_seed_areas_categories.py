@@ -253,10 +253,10 @@ def upgrade() -> None:
                 INSERT INTO awards (id, business_id, area_id, category_id, platform, award_name, year, tier, status,
                     offered_at, purchased_at, fulfilled_at, created_at, updated_at)
                 VALUES (:id, :biz_id, :area_id, :cat_id, 'google',
-                    'Apex Business Award 2026', 2026, :tier, :status::awardstatus,
+                    'Apex Business Award 2026', 2026, :tier, CAST(:status AS awardstatus),
                     :now,
-                    CASE WHEN :status::text IN ('purchased','fulfilled') THEN :now ELSE NULL END,
-                    CASE WHEN :status::text = 'fulfilled' THEN :now ELSE NULL END,
+                    CASE WHEN CAST(:status AS TEXT) IN ('purchased','fulfilled') THEN :now ELSE NULL END,
+                    CASE WHEN CAST(:status AS TEXT) = 'fulfilled' THEN :now ELSE NULL END,
                     :now, :now)
                 ON CONFLICT DO NOTHING
             """),
