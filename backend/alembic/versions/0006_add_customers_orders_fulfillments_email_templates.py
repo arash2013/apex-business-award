@@ -150,7 +150,7 @@ def upgrade() -> None:
         sa.Column("body_html", sa.Text, nullable=False),
         sa.Column("body_text", sa.Text, nullable=False),
         sa.Column(
-            "variables", postgresql.JSONB, nullable=False, server_default="'[]'::jsonb"
+            "variables", postgresql.JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")
         ),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
         sa.Column(

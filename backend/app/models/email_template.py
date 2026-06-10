@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, String, Text
+from sqlalchemy import Boolean, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,7 +18,7 @@ class EmailTemplate(Base, TimestampMixin):
     body_html: Mapped[str] = mapped_column(Text, nullable=False)
     body_text: Mapped[str] = mapped_column(Text, nullable=False)
     variables: Mapped[list] = mapped_column(
-        JSONB, nullable=False, server_default="'[]'::jsonb"
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
     )
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="true"
