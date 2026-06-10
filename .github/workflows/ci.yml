@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: ["feature/*", "hotfix/*"]
+    branches: ["feature/*", "fix/*", "hotfix/*"]
 
 jobs:
   branch-policy:
@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - name: Enforce feature/* branch convention
+      - name: Enforce branch naming convention
         run: |
           BRANCH="${{ github.head_ref }}"
           echo "PR source branch: $BRANCH"
-          if [[ "$BRANCH" =~ ^(feature|hotfix)/ ]]; then
+          if [[ "$BRANCH" =~ ^(feature|fix|hotfix)/ ]]; then
             echo "Branch name OK"
           else
             echo "ERROR: Branch '$BRANCH' does not match required pattern."
-            echo "Use feature/* or hotfix/*"
+            echo "Use feature/*, fix/*, or hotfix/*"
             exit 1
           fi
 
