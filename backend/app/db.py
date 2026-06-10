@@ -1,11 +1,12 @@
-import re
+from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from .config.settings import settings
 
-_db_url = re.sub(r"[?&]sslmode=[^&]*", "", settings.database_url).rstrip("?")
+_parsed = urlparse(settings.database_url)
 _connect_args = {"ssl": True} if "sslmode=require" in settings.database_url else {}
+_db_url = urlunparse(_parsed._replace(query=""))
 
 engine = create_async_engine(
     _db_url,
