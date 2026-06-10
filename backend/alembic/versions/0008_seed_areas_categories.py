@@ -255,8 +255,8 @@ def upgrade() -> None:
                 VALUES (:id, :biz_id, :area_id, :cat_id, 'google',
                     'Apex Business Award 2026', 2026, :tier, CAST(:status AS awardstatus),
                     CAST(:now AS TIMESTAMPTZ),
-                    CASE WHEN CAST(:status AS TEXT) IN ('purchased','fulfilled') THEN CAST(:now AS TIMESTAMPTZ) ELSE NULL END,
-                    CASE WHEN CAST(:status AS TEXT) = 'fulfilled' THEN CAST(:now AS TIMESTAMPTZ) ELSE NULL END,
+                    CASE WHEN :status_text IN ('purchased','fulfilled') THEN CAST(:now AS TIMESTAMPTZ) ELSE NULL END,
+                    CASE WHEN :status_text = 'fulfilled' THEN CAST(:now AS TIMESTAMPTZ) ELSE NULL END,
                     CAST(:now AS TIMESTAMPTZ), CAST(:now AS TIMESTAMPTZ))
                 ON CONFLICT DO NOTHING
             """),
@@ -267,6 +267,7 @@ def upgrade() -> None:
                 "cat_id": cat_id,
                 "tier": tier,
                 "status": status,
+                "status_text": status,
                 "now": now,
             },
         )
