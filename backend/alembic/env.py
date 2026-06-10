@@ -1,4 +1,5 @@
 import asyncio
+from urllib.parse import urlparse, urlunparse
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -16,7 +17,11 @@ from app.config.settings import settings  # noqa: E402
 
 target_metadata = Base.metadata
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# asyncpg doesn't accept query params like sslmode/channel_binding; strip all of them
+_parsed = urlparse(settings.database_url)
+_ssl_required = "sslmode=require" in (settings.database_url)
+_db_url = urlunparse(_parsed._replace(query=""))
+config.set_main_option("sqlalchemy.url", _db_url)
 
 
 def run_migrations_offline() -> None:
@@ -38,10 +43,12 @@ def do_run_migrations(connection):
 
 
 async def run_migrations_online() -> None:
+    connect_args = {"ssl": True} if _ssl_required else {}
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
