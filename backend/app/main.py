@@ -53,6 +53,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://apexbusinessaward.com",
         "https://www.apexbusinessaward.com",
+        settings.frontend_url,
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
