@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Dev-only API-key fallback (used when Azure AD is not configured)
     admin_api_key: str = ""
 
+    # Frontend
+    frontend_url: str = "http://localhost:3000"
+
     # Award tier pricing (USD dollars)
     tier_price_basic: int = 199
     tier_price_pro: int = 249
