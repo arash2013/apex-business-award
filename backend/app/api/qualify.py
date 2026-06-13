@@ -234,13 +234,95 @@ async def _fetch_place_details(
     }
 
 
-@router.post("/by-url", response_model=QualifyByUrlResponse)
-async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
+def _no_api_key() -> None:
     if not settings.google_places_api_key:
         raise HTTPException(
             status_code=503,
             detail="Google Places API is not configured. Please try again later.",
         )
+
+
+# ── Autocomplete ────────────────────────────────────────────────────────────
+
+_PLACES_AUTOCOMPLETE = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+
+class AutocompleteResult(BaseModel):
+    place_id: str
+    name: str
+    address: str
+
+
+@router.get("/autocomplete", response_model=list[AutocompleteResult])
+async def autocomplete(q: str) -> list[AutocompleteResult]:
+    """Return up to 5 business suggestions matching the query."""
+    _no_api_key()
+    q = q.strip()
+    if len(q) < 2:
+        return []
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            _PLACES_AUTOCOMPLETE,
+            params={
+                "input": q,
+                "types": "establishment",
+                "fields": "place_id,description,structured_formatting",
+                "key": settings.google_places_api_key,
+            },
+        )
+
+    predictions = resp.json().get("predictions", [])
+    results: list[AutocompleteResult] = []
+    for p in predictions[:5]:
+        fmt = p.get("structured_formatting", {})
+        results.append(
+            AutocompleteResult(
+                place_id=p["place_id"],
+                name=fmt.get("main_text") or p.get("description", ""),
+                address=fmt.get("secondary_text") or "",
+            )
+        )
+    return results
+
+
+# ── Qualify by Place ID ─────────────────────────────────────────────────────
+
+class QualifyByPlaceIdRequest(BaseModel):
+    place_id: str
+
+
+@router.post("/by-place-id", response_model=QualifyByUrlResponse)
+async def qualify_by_place_id(body: QualifyByPlaceIdRequest) -> QualifyByUrlResponse:
+    _no_api_key()
+    async with httpx.AsyncClient(timeout=15) as client:
+        details = await _fetch_place_details(client, body.place_id)
+
+    inp = QualificationInput(
+        google_rating=float(details["rating"] or 0),
+        google_review_count=int(details["review_count"] or 0),
+        google_last_review_date=details["last_review_date"],
+        google_owner_response_rate=None,
+    )
+    result = compute_qualification(inp)
+
+    return QualifyByUrlResponse(
+        business_name=details["name"],
+        business_address=details["address"],
+        score=result.score,
+        qualified=result.qualified,
+        breakdown=result.breakdown,
+        disqualification_reasons=result.disqualification_reasons,
+        google_rating=details["rating"],
+        google_review_count=details["review_count"],
+    )
+
+
+# ── Qualify by URL (kept for backward compat) ───────────────────────────────
+
+@router.post("/by-url", response_model=QualifyByUrlResponse)
+async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
+    _no_api_key()
 
     async with httpx.AsyncClient(timeout=15) as client:
         place_id = await _resolve_place_id(client, body.google_maps_url)

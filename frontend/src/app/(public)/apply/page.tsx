@@ -10,18 +10,18 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     n: "1",
-    title: "Find your listing",
-    desc: 'Search for your business on Google Maps, then tap Share → "Copy link".',
+    title: "Type your business name",
+    desc: "Start typing and select your listing from the search results.",
   },
   {
     n: "2",
-    title: "Copy any Google link",
-    desc: "Share links, maps.app.goo.gl links, or the full URL — all work.",
+    title: "We check Google data",
+    desc: "Rating, review count, recency, and owner engagement — all verified.",
   },
   {
     n: "3",
-    title: "Paste below",
-    desc: `We'll score you against the ${brand.year} criteria instantly.`,
+    title: "Instant score",
+    desc: `See your qualification score against the ${brand.year} criteria in seconds.`,
   },
 ];
 
@@ -43,9 +43,8 @@ export default function ApplyPage() {
           Check Your Qualification
         </h1>
         <p className="text-gray-500 text-base leading-relaxed">
-          Paste any Google link to your business and we&apos;ll score it against
-          the {brand.year} criteria — share links, goo.gl links, and full Maps
-          URLs all work.
+          Search for your business below. We&apos;ll pull your Google data and
+          score you against the {brand.year} criteria instantly.
         </p>
       </div>
 
