@@ -244,12 +244,6 @@ def _no_api_key() -> None:
 
 # ── Autocomplete ────────────────────────────────────────────────────────────
 
-# Text Search covers all business types including service-area businesses
-# that have no physical address. Autocomplete API biases toward establishments
-# with addresses and cannot be fully disabled via the Legacy API.
-_PLACES_TEXTSEARCH = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-
-
 class AutocompleteResult(BaseModel):
     place_id: str
     name: str
@@ -260,29 +254,57 @@ class AutocompleteResult(BaseModel):
 async def autocomplete(
     q: str = Query(..., min_length=2, max_length=200),
 ) -> list[AutocompleteResult]:
-    """Return up to 5 business suggestions matching the query."""
+    """Return up to 5 business suggestions matching the query.
+
+    Uses Find Place from Text, which resolves exact business names for all
+    business types including service-area businesses with no physical address.
+    Falls back to Autocomplete for partial-match / in-progress typing.
+    """
     _no_api_key()
     q = q.strip()
     if len(q) < 2:
         return []
 
     async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(
-            _PLACES_TEXTSEARCH,
+        # Primary: Find Place from Text — best exact-name match, covers all
+        # business types including service-area businesses without an address.
+        find_resp = await client.get(
+            _PLACES_FIND,
             params={
-                "query": q,
+                "input": q,
+                "inputtype": "textquery",
+                "fields": "place_id,name,formatted_address",
                 "key": settings.google_places_api_key,
             },
         )
+        candidates = find_resp.json().get("candidates", [])
 
-    results_raw = resp.json().get("results", [])
+        # Fallback: Autocomplete for partial queries (Find Place needs ~full name)
+        if not candidates:
+            auto_resp = await client.get(
+                "https://maps.googleapis.com/maps/api/place/autocomplete/json",
+                params={
+                    "input": q,
+                    "key": settings.google_places_api_key,
+                },
+            )
+            for p in auto_resp.json().get("predictions", [])[:5]:
+                fmt = p.get("structured_formatting", {})
+                candidates.append(
+                    {
+                        "place_id": p["place_id"],
+                        "name": fmt.get("main_text") or p.get("description", ""),
+                        "formatted_address": fmt.get("secondary_text") or "",
+                    }
+                )
+
     results: list[AutocompleteResult] = []
-    for r in results_raw[:5]:
+    for c in candidates[:5]:
         results.append(
             AutocompleteResult(
-                place_id=r["place_id"],
-                name=r.get("name", ""),
-                address=r.get("formatted_address", ""),
+                place_id=c["place_id"],
+                name=c.get("name", ""),
+                address=c.get("formatted_address", ""),
             )
         )
     return results
