@@ -2,5 +2,8 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
+[build.args]
+GIT_SHA = "$RAILWAY_GIT_COMMIT_SHA"
+
 [deploy]
 restartPolicyType = "on_failure"
