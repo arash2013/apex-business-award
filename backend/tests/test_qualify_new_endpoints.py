@@ -13,24 +13,25 @@ from app.main import app
 _AUTOCOMPLETE_URL = "/api/v1/qualify/autocomplete"
 _BY_PLACE_ID_URL = "/api/v1/qualify/by-place-id"
 
+# Find Place from Text response format (used by autocomplete primary path)
 _MOCK_AUTOCOMPLETE_RESPONSE = {
-    "predictions": [
+    "candidates": [
         {
             "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
-            "structured_formatting": {
-                "main_text": "Acme Barbershop",
-                "secondary_text": "123 Main St, Houston, TX",
-            },
+            "name": "Acme Barbershop",
+            "formatted_address": "123 Main St, Houston, TX",
         },
         {
             "place_id": "ChIJABC123",
-            "structured_formatting": {
-                "main_text": "Acme Auto",
-                "secondary_text": "456 Oak Ave, Houston, TX",
-            },
+            "name": "Acme Auto",
+            "formatted_address": "456 Oak Ave, Houston, TX",
         },
-    ]
+    ],
+    "status": "OK",
 }
+
+# Timestamp ~30 days before 2026-06-13 (well within the 12-month recency cutoff)
+_RECENT_REVIEW_TS = 1_778_803_200  # 2026-05-14
 
 _MOCK_PLACE_DETAILS_RESPONSE = {
     "result": {
@@ -38,7 +39,7 @@ _MOCK_PLACE_DETAILS_RESPONSE = {
         "formatted_address": "123 Main St, Houston, TX 77002, USA",
         "rating": 4.7,
         "user_ratings_total": 312,
-        "reviews": [{"time": 1_740_000_000}],
+        "reviews": [{"time": _RECENT_REVIEW_TS}],
     }
 }
 
@@ -124,13 +125,11 @@ async def test_autocomplete_missing_api_key_returns_503():
 async def test_autocomplete_caps_at_five_results():
     """At most 5 predictions are returned regardless of API response size."""
     many_predictions = {
-        "predictions": [
+        "candidates": [
             {
                 "place_id": f"ChIJ{i}",
-                "structured_formatting": {
-                    "main_text": f"Business {i}",
-                    "secondary_text": f"{i} St",
-                },
+                "name": f"Business {i}",
+                "formatted_address": f"{i} St",
             }
             for i in range(10)
         ]
