@@ -19,6 +19,16 @@ router = APIRouter(prefix="/qualify", tags=["qualification"])
 _PLACES_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json"
 _PLACES_FIND = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
 
+# Browser headers so Google share/short URLs follow through properly
+_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
 
 class QualifyRequest(BaseModel):
     google_rating: float = Field(..., ge=0.0, le=5.0)
@@ -67,44 +77,61 @@ class QualifyByUrlResponse(BaseModel):
 
 
 def _extract_place_id(url: str) -> str | None:
-    """Extract Google Place ID (ChIJ...) from a Maps URL if present."""
+    """Extract Google Place ID (ChIJ…) from a Maps URL data parameter."""
     match = re.search(r"!1s(ChIJ[^!&]+)", url)
     return match.group(1) if match else None
 
 
 def _extract_business_name(url: str) -> str | None:
-    """Extract business name from /maps/place/<name>/ URL path segment."""
+    """Extract business name from /maps/place/<name>/ path segment."""
     match = re.search(r"/maps/place/([^/@?]+)", url)
     if match:
         return unquote_plus(match.group(1).replace("+", " "))
     return None
 
 
+def _extract_query_text(url: str) -> str | None:
+    """Extract free-text query from ?q= or ?query= parameter (fallback)."""
+    qs = parse_qs(urlparse(url).query)
+    for key in ("q", "query"):
+        vals = qs.get(key)
+        if vals and vals[0].strip():
+            return vals[0].strip()
+    return None
+
+
+def _extract_cid(url: str) -> str | None:
+    """Extract numeric CID from ?cid= parameter."""
+    qs = parse_qs(urlparse(url).query)
+    vals = qs.get("cid")
+    if vals and vals[0].isdigit():
+        return vals[0]
+    return None
+
+
 def _is_short_url(url: str) -> bool:
-    """Return True for any Google short/share URL that needs redirect resolution."""
-    return any(h in url for h in ("goo.gl", "maps.app", "share.google"))
+    return any(h in url for h in ("goo.gl", "maps.app", "share.google", "g.co"))
 
 
-async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
-    """Return a Place ID from any Google Maps URL, following redirects if needed."""
-    resolved = url
-    if _is_short_url(url):
-        try:
-            r = await client.get(url, follow_redirects=True)
-            resolved = str(r.url)
-        except Exception:
-            pass
+async def _follow_to_maps(client: httpx.AsyncClient, url: str) -> str:
+    """Follow redirects with browser headers; return the final URL."""
+    try:
+        r = await client.get(url, follow_redirects=True, headers=_BROWSER_HEADERS)
+        final = str(r.url)
+        logger.info("Resolved %s → %s", url, final)
+        return final
+    except Exception as exc:
+        logger.warning("Redirect follow failed for %s: %s", url, exc)
+        return url
 
-    place_id = _extract_place_id(resolved)
-    if place_id:
-        return place_id
 
-    name = _extract_business_name(resolved)
-    if name:
+async def _text_search_place_id(client: httpx.AsyncClient, query: str) -> str | None:
+    """Try Places findplacefromtext with a text query; return Place ID or None."""
+    try:
         resp = await client.get(
             _PLACES_FIND,
             params={
-                "input": name,
+                "input": query,
                 "inputtype": "textquery",
                 "fields": "place_id",
                 "key": settings.google_places_api_key,
@@ -113,13 +140,64 @@ async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
         candidates = resp.json().get("candidates", [])
         if candidates:
             return candidates[0]["place_id"]
+    except Exception as exc:
+        logger.warning("findplacefromtext failed for %r: %s", query, exc)
+    return None
+
+
+async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
+    """Return a Place ID from any Google Maps / share URL."""
+    # Step 1: follow redirects for short/share URLs
+    resolved = url
+    if _is_short_url(url):
+        resolved = await _follow_to_maps(client, url)
+
+    # Step 2: try Place ID directly in data parameter
+    place_id = _extract_place_id(resolved)
+    if place_id:
+        return place_id
+
+    # Step 3: business name in /maps/place/<name>/ path
+    name = _extract_business_name(resolved)
+    if name:
+        pid = await _text_search_place_id(client, name)
+        if pid:
+            return pid
+
+    # Step 4: ?cid= parameter — use CID as text query (sometimes resolves)
+    cid = _extract_cid(resolved)
+    if cid:
+        pid = await _text_search_place_id(client, f"cid:{cid}")
+        if pid:
+            return pid
+
+    # Step 5: ?q= free-text query
+    query = _extract_query_text(resolved)
+    if query:
+        pid = await _text_search_place_id(client, query)
+        if pid:
+            return pid
+
+    # Step 6: if the short URL resolution didn't fully expand (e.g. share.google →
+    # another short URL), try one more hop
+    if _is_short_url(resolved) and resolved != url:
+        double_resolved = await _follow_to_maps(client, resolved)
+        if double_resolved != resolved:
+            place_id = _extract_place_id(double_resolved)
+            if place_id:
+                return place_id
+            name = _extract_business_name(double_resolved)
+            if name:
+                pid = await _text_search_place_id(client, name)
+                if pid:
+                    return pid
 
     raise HTTPException(
         status_code=422,
         detail=(
             "Could not resolve a business from that URL. "
-            "Accepted formats: full Google Maps URL, maps.app.goo.gl share link, "
-            "or share.google link."
+            "Try copying the full URL from your browser's address bar on Google Maps, "
+            "or use the Share → Copy link option in the Google Maps app."
         ),
     )
 
@@ -156,13 +234,95 @@ async def _fetch_place_details(
     }
 
 
-@router.post("/by-url", response_model=QualifyByUrlResponse)
-async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
+def _no_api_key() -> None:
     if not settings.google_places_api_key:
         raise HTTPException(
             status_code=503,
             detail="Google Places API is not configured. Please try again later.",
         )
+
+
+# ── Autocomplete ────────────────────────────────────────────────────────────
+
+_PLACES_AUTOCOMPLETE = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+
+class AutocompleteResult(BaseModel):
+    place_id: str
+    name: str
+    address: str
+
+
+@router.get("/autocomplete", response_model=list[AutocompleteResult])
+async def autocomplete(q: str) -> list[AutocompleteResult]:
+    """Return up to 5 business suggestions matching the query."""
+    _no_api_key()
+    q = q.strip()
+    if len(q) < 2:
+        return []
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            _PLACES_AUTOCOMPLETE,
+            params={
+                "input": q,
+                "types": "establishment",
+                "fields": "place_id,description,structured_formatting",
+                "key": settings.google_places_api_key,
+            },
+        )
+
+    predictions = resp.json().get("predictions", [])
+    results: list[AutocompleteResult] = []
+    for p in predictions[:5]:
+        fmt = p.get("structured_formatting", {})
+        results.append(
+            AutocompleteResult(
+                place_id=p["place_id"],
+                name=fmt.get("main_text") or p.get("description", ""),
+                address=fmt.get("secondary_text") or "",
+            )
+        )
+    return results
+
+
+# ── Qualify by Place ID ─────────────────────────────────────────────────────
+
+class QualifyByPlaceIdRequest(BaseModel):
+    place_id: str
+
+
+@router.post("/by-place-id", response_model=QualifyByUrlResponse)
+async def qualify_by_place_id(body: QualifyByPlaceIdRequest) -> QualifyByUrlResponse:
+    _no_api_key()
+    async with httpx.AsyncClient(timeout=15) as client:
+        details = await _fetch_place_details(client, body.place_id)
+
+    inp = QualificationInput(
+        google_rating=float(details["rating"] or 0),
+        google_review_count=int(details["review_count"] or 0),
+        google_last_review_date=details["last_review_date"],
+        google_owner_response_rate=None,
+    )
+    result = compute_qualification(inp)
+
+    return QualifyByUrlResponse(
+        business_name=details["name"],
+        business_address=details["address"],
+        score=result.score,
+        qualified=result.qualified,
+        breakdown=result.breakdown,
+        disqualification_reasons=result.disqualification_reasons,
+        google_rating=details["rating"],
+        google_review_count=details["review_count"],
+    )
+
+
+# ── Qualify by URL (kept for backward compat) ───────────────────────────────
+
+@router.post("/by-url", response_model=QualifyByUrlResponse)
+async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
+    _no_api_key()
 
     async with httpx.AsyncClient(timeout=15) as client:
         place_id = await _resolve_place_id(client, body.google_maps_url)
