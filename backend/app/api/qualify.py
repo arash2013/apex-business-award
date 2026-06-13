@@ -77,16 +77,12 @@ def _extract_place_id(url: str) -> str | None:
     return match.group(1) if match else None
 
 
-def _extract_cid(url: str) -> str | None:
-    """Extract CID (decimal string) from ?cid= or hex !1s0x...:0x... in data param."""
-    qs = parse_qs(urlparse(url).query)
-    if cid := qs.get("cid", [None])[0]:
-        return cid
-    # Hex CID embedded in data parameter: !1s0x<high>:0x<low>
-    match = re.search(r"!1s(0x[0-9a-f]+:0x[0-9a-f]+)", url, re.IGNORECASE)
+def _extract_business_name(url: str) -> str | None:
+    """Extract business name from /maps/place/<name>/ URL path segment."""
+    match = re.search(r"/maps/place/([^/@?]+)", url)
     if match:
-        high, low = match.group(1).split(":")
-        return str((int(high, 16) << 64) | int(low, 16)) if int(high, 16) else str(int(low, 16))
+        from urllib.parse import unquote_plus
+        return unquote_plus(match.group(1).replace("+", " "))
     return None
 
 
@@ -105,13 +101,13 @@ async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     if place_id:
         return place_id
 
-    # CID → Find Place lookup
-    cid = _extract_cid(resolved)
-    if cid:
+    # Business name text search (works for /maps/place/Name/data=... URLs)
+    name = _extract_business_name(resolved)
+    if name:
         resp = await client.get(
             _PLACES_FIND,
             params={
-                "input": f"cid:{cid}",
+                "input": name,
                 "inputtype": "textquery",
                 "fields": "place_id",
                 "key": settings.google_places_api_key,
