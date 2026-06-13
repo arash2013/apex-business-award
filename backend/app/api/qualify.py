@@ -244,7 +244,10 @@ def _no_api_key() -> None:
 
 # ── Autocomplete ────────────────────────────────────────────────────────────
 
-_PLACES_AUTOCOMPLETE = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+# Text Search covers all business types including service-area businesses
+# that have no physical address. Autocomplete API biases toward establishments
+# with addresses and cannot be fully disabled via the Legacy API.
+_PLACES_TEXTSEARCH = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 
 
 class AutocompleteResult(BaseModel):
@@ -265,23 +268,22 @@ async def autocomplete(
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            _PLACES_AUTOCOMPLETE,
+            _PLACES_TEXTSEARCH,
             params={
-                "input": q,
-                "fields": "place_id,description,structured_formatting",
+                "query": q,
+                "fields": "place_id,name,formatted_address",
                 "key": settings.google_places_api_key,
             },
         )
 
-    predictions = resp.json().get("predictions", [])
+    results_raw = resp.json().get("results", [])
     results: list[AutocompleteResult] = []
-    for p in predictions[:5]:
-        fmt = p.get("structured_formatting", {})
+    for r in results_raw[:5]:
         results.append(
             AutocompleteResult(
-                place_id=p["place_id"],
-                name=fmt.get("main_text") or p.get("description", ""),
-                address=fmt.get("secondary_text") or "",
+                place_id=r["place_id"],
+                name=r.get("name", ""),
+                address=r.get("formatted_address", ""),
             )
         )
     return results
