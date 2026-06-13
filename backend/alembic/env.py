@@ -1,5 +1,5 @@
 import asyncio
-import re
+from urllib.parse import urlparse, urlunparse
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -17,9 +17,10 @@ from app.config.settings import settings  # noqa: E402
 
 target_metadata = Base.metadata
 
-# asyncpg doesn't accept sslmode as a query param; strip it and use connect_args
-_db_url = re.sub(r"[?&]sslmode=[^&]*", "", settings.database_url).rstrip("?")
-_ssl_required = "sslmode=require" in settings.database_url
+# asyncpg doesn't accept query params like sslmode/channel_binding; strip all of them
+_parsed = urlparse(settings.database_url)
+_ssl_required = "sslmode=require" in (settings.database_url)
+_db_url = urlunparse(_parsed._replace(query=""))
 config.set_main_option("sqlalchemy.url", _db_url)
 
 
