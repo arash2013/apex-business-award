@@ -63,10 +63,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_production_secrets(self) -> "Settings":
-        if self.environment == "production" and self.secret_key == _INSECURE_SECRET:
-            raise ValueError(
-                "SECRET_KEY must be overridden with a strong random value in production"
-            )
+        if self.environment == "production":
+            if self.secret_key == _INSECURE_SECRET:
+                raise ValueError(
+                    "SECRET_KEY must be overridden with a strong random value in production"
+                )
+            if not self.google_places_api_key:
+                raise ValueError(
+                    "GOOGLE_PLACES_API_KEY is required in production"
+                )
         return self
 
     def award_name(self, category: str, year: int, area_name: str) -> str:

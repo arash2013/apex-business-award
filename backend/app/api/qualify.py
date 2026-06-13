@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..config.settings import settings
@@ -254,7 +254,9 @@ class AutocompleteResult(BaseModel):
 
 
 @router.get("/autocomplete", response_model=list[AutocompleteResult])
-async def autocomplete(q: str) -> list[AutocompleteResult]:
+async def autocomplete(
+    q: str = Query(..., min_length=2, max_length=200),
+) -> list[AutocompleteResult]:
     """Return up to 5 business suggestions matching the query."""
     _no_api_key()
     q = q.strip()

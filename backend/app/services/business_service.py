@@ -57,8 +57,6 @@ async def refresh_qualification(db: AsyncSession, business: Business) -> Busines
             if business.google_owner_response_rate is not None
             else None
         ),
-        yelp_rating=float(business.yelp_rating) if business.yelp_rating else None,
-        yelp_review_count=business.yelp_review_count,
     )
     result = compute_qualification(inp)
     business.qualification_score = result.score  # type: ignore[assignment]

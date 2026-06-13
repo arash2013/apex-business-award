@@ -1,0 +1,265 @@
+"""Tests for the autocomplete and by-place-id qualification endpoints."""
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from httpx import AsyncClient, ASGITransport
+
+from app.main import app
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_AUTOCOMPLETE_URL = "/api/v1/qualify/autocomplete"
+_BY_PLACE_ID_URL = "/api/v1/qualify/by-place-id"
+
+_MOCK_AUTOCOMPLETE_RESPONSE = {
+    "predictions": [
+        {
+            "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+            "structured_formatting": {
+                "main_text": "Acme Barbershop",
+                "secondary_text": "123 Main St, Houston, TX",
+            },
+        },
+        {
+            "place_id": "ChIJABC123",
+            "structured_formatting": {
+                "main_text": "Acme Auto",
+                "secondary_text": "456 Oak Ave, Houston, TX",
+            },
+        },
+    ]
+}
+
+_MOCK_PLACE_DETAILS_RESPONSE = {
+    "result": {
+        "name": "Acme Barbershop",
+        "formatted_address": "123 Main St, Houston, TX 77002, USA",
+        "rating": 4.7,
+        "user_ratings_total": 312,
+        "reviews": [{"time": 1_740_000_000}],
+    }
+}
+
+
+def _mock_http_response(json_body: dict, status_code: int = 200):
+    """Return a mock httpx response."""
+    from unittest.mock import MagicMock
+    import httpx
+
+    resp = MagicMock(spec=httpx.Response)
+    resp.status_code = status_code
+    resp.json.return_value = json_body
+    resp.raise_for_status = MagicMock()
+    return resp
+
+
+# ---------------------------------------------------------------------------
+# GET /autocomplete
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_returns_suggestions():
+    """Valid query returns a list of business suggestions."""
+    with (
+        patch("app.api.qualify.settings") as mock_settings,
+        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+    ):
+        mock_settings.google_places_api_key = "test-key"
+        mock_get.return_value = _mock_http_response(_MOCK_AUTOCOMPLETE_RESPONSE)
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.get(_AUTOCOMPLETE_URL, params={"q": "Acme"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]["place_id"] == "ChIJN1t_tDeuEmsRUsoyG83frY4"
+    assert data[0]["name"] == "Acme Barbershop"
+    assert data[0]["address"] == "123 Main St, Houston, TX"
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_short_query_rejected():
+    """Queries shorter than 2 characters are rejected with 422."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get(_AUTOCOMPLETE_URL, params={"q": "A"})
+
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_empty_query_rejected():
+    """Empty query string is rejected with 422."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get(_AUTOCOMPLETE_URL, params={"q": ""})
+
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_missing_api_key_returns_503():
+    """Missing Google Places API key returns 503."""
+    with patch("app.api.qualify.settings") as mock_settings:
+        mock_settings.google_places_api_key = ""
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.get(_AUTOCOMPLETE_URL, params={"q": "Acme"})
+
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_autocomplete_caps_at_five_results():
+    """At most 5 predictions are returned regardless of API response size."""
+    many_predictions = {
+        "predictions": [
+            {
+                "place_id": f"ChIJ{i}",
+                "structured_formatting": {
+                    "main_text": f"Business {i}",
+                    "secondary_text": f"{i} St",
+                },
+            }
+            for i in range(10)
+        ]
+    }
+    with (
+        patch("app.api.qualify.settings") as mock_settings,
+        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+    ):
+        mock_settings.google_places_api_key = "test-key"
+        mock_get.return_value = _mock_http_response(many_predictions)
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.get(_AUTOCOMPLETE_URL, params={"q": "Business"})
+
+    assert resp.status_code == 200
+    assert len(resp.json()) <= 5
+
+
+# ---------------------------------------------------------------------------
+# POST /by-place-id
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_by_place_id_qualified_business():
+    """Valid place_id with qualifying metrics returns a full result."""
+    with (
+        patch("app.api.qualify.settings") as mock_settings,
+        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+    ):
+        mock_settings.google_places_api_key = "test-key"
+        mock_get.return_value = _mock_http_response(_MOCK_PLACE_DETAILS_RESPONSE)
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                _BY_PLACE_ID_URL,
+                json={"place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4"},
+            )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["business_name"] == "Acme Barbershop"
+    assert data["qualified"] is True
+    assert data["score"] > 0
+    assert "google_rating" in data
+    assert "google_review_count" in data
+    assert isinstance(data["breakdown"], dict)
+    assert isinstance(data["disqualification_reasons"], list)
+
+
+@pytest.mark.asyncio
+async def test_by_place_id_not_found_returns_404():
+    """place_id that returns empty result from Places API yields 404."""
+    with (
+        patch("app.api.qualify.settings") as mock_settings,
+        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+    ):
+        mock_settings.google_places_api_key = "test-key"
+        mock_get.return_value = _mock_http_response({"result": {}})
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                _BY_PLACE_ID_URL, json={"place_id": "ChIJinvalid"}
+            )
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_by_place_id_missing_api_key_returns_503():
+    """Missing Google Places API key returns 503."""
+    with patch("app.api.qualify.settings") as mock_settings:
+        mock_settings.google_places_api_key = ""
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                _BY_PLACE_ID_URL,
+                json={"place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4"},
+            )
+
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_by_place_id_missing_body_returns_422():
+    """Missing place_id field yields 422 validation error."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.post(_BY_PLACE_ID_URL, json={})
+
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_by_place_id_low_rating_not_qualified():
+    """Business with rating below 4.0 is not qualified."""
+    low_rating_response = {
+        "result": {
+            "name": "Mediocre Shop",
+            "formatted_address": "999 Low St",
+            "rating": 3.2,
+            "user_ratings_total": 80,
+            "reviews": [{"time": 1_740_000_000}],
+        }
+    }
+    with (
+        patch("app.api.qualify.settings") as mock_settings,
+        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+    ):
+        mock_settings.google_places_api_key = "test-key"
+        mock_get.return_value = _mock_http_response(low_rating_response)
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.post(
+                _BY_PLACE_ID_URL, json={"place_id": "ChIJlow"}
+            )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["qualified"] is False
+    assert len(data["disqualification_reasons"]) > 0
