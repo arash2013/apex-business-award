@@ -24,8 +24,8 @@ const BREAKDOWN_LABELS: Record<string, string> = {
 };
 
 const BREAKDOWN_MAX: Record<string, number> = {
-  google_rating: 35,
-  review_count: 25,
+  google_rating: 40,
+  review_count: 30,
   recency: 20,
   owner_response_rate: 10,
 };

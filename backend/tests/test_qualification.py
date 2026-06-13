@@ -19,7 +19,7 @@ def _input(**overrides) -> QualificationInput:
 def test_fully_qualified_business_scores_high():
     result = compute_qualification(_input())
     assert result.qualified is True
-    assert result.score > 70
+    assert result.score > 75
 
 
 def test_low_rating_disqualifies():
@@ -127,7 +127,7 @@ def test_review_count_caps_at_500():
     r_500 = compute_qualification(_input(google_review_count=500))
     r_999 = compute_qualification(_input(google_review_count=999))
     assert r_500.breakdown["review_count"] == r_999.breakdown["review_count"]
-    assert r_500.breakdown["review_count"] == 25.0
+    assert r_500.breakdown["review_count"] == 30.0
 
 
 # ── Recency boundary: exactly 90 / 180 / 365 days ────────────────────────────

@@ -37,11 +37,10 @@
 - Commits: conventional format (feat:, fix:, chore:, docs:)
 
 ## Qualification Score Formula (0-100)
-- Google rating → 0-35 pts
-- Review count (50+) → up to 25 pts
+- Google rating → 0-40 pts
+- Review count (50+) → up to 30 pts
 - Recency (3mo=20, 6mo=15, 12mo=10) pts
 - Owner response rate → up to 10 pts
-- Yelp cross-reference bonus → up to 10 pts
 - Hard cutoffs: rating ≥ 4.0, count ≥ 50, review within 12 months
 
 ## Award Tiers

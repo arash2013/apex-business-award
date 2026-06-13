@@ -78,14 +78,14 @@ def test_low_rating_and_low_count_both_reported():
 
 # ── Scoring math ───────────────────────────────────────────────────────────
 
-def test_perfect_rating_gives_35_pts():
+def test_perfect_rating_gives_40_pts():
     result = compute_qualification(_input(google_rating=5.0))
-    assert result.breakdown["google_rating"] == 35.0
+    assert result.breakdown["google_rating"] == 40.0
 
 
-def test_midpoint_rating_4_5_gives_17_5_pts():
+def test_midpoint_rating_4_5_gives_20_pts():
     result = compute_qualification(_input(google_rating=4.5))
-    assert result.breakdown["google_rating"] == pytest.approx(17.5, abs=0.1)
+    assert result.breakdown["google_rating"] == pytest.approx(20.0, abs=0.1)
 
 
 def test_owner_response_rate_zero_gives_zero_pts():
