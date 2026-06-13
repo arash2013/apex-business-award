@@ -26,11 +26,10 @@ const STEPS = [
 ];
 
 const CRITERIA = [
-  { label: "Google rating", req: "≥ 4.0 stars", pts: "up to 35 pts" },
-  { label: "Review count", req: "≥ 50 reviews", pts: "up to 25 pts" },
-  { label: "Review recency", req: "within 12 months", pts: "up to 20 pts" },
-  { label: "Owner response rate", req: "tracked", pts: "up to 10 pts" },
-  { label: "Yelp cross-reference", req: "≥ 4.0 preferred", pts: "up to 10 pts" },
+  { label: "Google rating", req: "≥ 4.0 stars · all-time", pts: "up to 40 pts" },
+  { label: "Review count", req: "≥ 50 reviews · all-time", pts: "up to 30 pts" },
+  { label: "Review recency", req: "at least 1 review within 12 months", pts: "up to 20 pts" },
+  { label: "Owner response rate", req: "based on last 90 days of reviews", pts: "up to 10 pts" },
 ];
 
 export default function ApplyPage() {
@@ -84,7 +83,7 @@ export default function ApplyPage() {
       </div>
 
       <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
-        Qualification is based on publicly available Google and Yelp data.
+        Qualification is based on publicly available Google data.
         Results are generated in real time. Checking is always free.
       </p>
     </div>

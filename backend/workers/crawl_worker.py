@@ -1,4 +1,4 @@
-"""Crawl worker — Google Places + Yelp API integration."""
+"""Crawl worker — Google Places API integration."""
 
 import logging
 from datetime import datetime, timezone
@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 _PLACES_TEXTSEARCH = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 _PLACES_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json"
-_YELP_SEARCH = "https://api.yelp.com/v3/businesses/search"
 
 
 async def _run_crawl(job_id: UUID) -> None:
@@ -79,7 +78,7 @@ async def _run_crawl(job_id: UUID) -> None:
 async def _fetch_google_places(
     area: Area | None, category: Category | None
 ) -> list[dict]:
-    """Search Google Places Text Search then enrich each result with Yelp data."""
+    """Search Google Places Text Search for businesses in the given area/category."""
     if not settings.google_places_api_key:
         logger.warning("GOOGLE_PLACES_API_KEY not set — skipping crawl")
         return []
@@ -102,22 +101,17 @@ async def _fetch_google_places(
             if not place_id:
                 continue
 
-            name = place.get("name", "")
-            address = place.get("formatted_address", "")
-
             last_review_date = await _fetch_last_review_date(client, place_id)
-            yelp = await _fetch_yelp(client, name, address)
 
             results.append(
                 {
                     "place_id": place_id,
-                    "name": name,
-                    "address": address,
+                    "name": place.get("name", ""),
+                    "address": place.get("formatted_address", ""),
                     "rating": place.get("rating"),
                     "review_count": place.get("user_ratings_total"),
                     "last_review_date": last_review_date,
-                    "owner_response_rate": None,  # not exposed by Places API
-                    **yelp,
+                    "owner_response_rate": None,
                 }
             )
 
@@ -147,29 +141,6 @@ async def _fetch_last_review_date(
     return None
 
 
-async def _fetch_yelp(client: httpx.AsyncClient, name: str, address: str) -> dict:
-    """Return yelp_rating and yelp_review_count, or empty dict if unavailable."""
-    if not settings.yelp_api_key or not address:
-        return {}
-    try:
-        resp = await client.get(
-            _YELP_SEARCH,
-            params={"term": name, "location": address, "limit": 1},
-            headers={"Authorization": f"Bearer {settings.yelp_api_key}"},
-        )
-        resp.raise_for_status()
-        businesses = resp.json().get("businesses", [])
-        if businesses:
-            biz = businesses[0]
-            return {
-                "yelp_rating": biz.get("rating"),
-                "yelp_review_count": biz.get("review_count"),
-            }
-    except Exception:
-        logger.warning("Yelp lookup failed for %s", name)
-    return {}
-
-
 async def _upsert_business(
     db: AsyncSession,
     raw: dict,
@@ -194,8 +165,6 @@ async def _upsert_business(
             google_review_count=raw.get("review_count"),
             google_last_review_date=raw.get("last_review_date"),
             google_owner_response_rate=raw.get("owner_response_rate"),
-            yelp_rating=raw.get("yelp_rating"),
-            yelp_review_count=raw.get("yelp_review_count"),
         )
         db.add(biz)
         action = CrawlResultAction.created
@@ -205,10 +174,6 @@ async def _upsert_business(
         biz.google_last_review_date = raw.get(
             "last_review_date", biz.google_last_review_date
         )
-        if raw.get("yelp_rating") is not None:
-            biz.yelp_rating = raw["yelp_rating"]
-        if raw.get("yelp_review_count") is not None:
-            biz.yelp_review_count = raw["yelp_review_count"]
         action = CrawlResultAction.updated
 
     inp = QualificationInput(
@@ -220,8 +185,6 @@ async def _upsert_business(
             if biz.google_owner_response_rate
             else None
         ),
-        yelp_rating=float(biz.yelp_rating) if biz.yelp_rating else None,
-        yelp_review_count=biz.yelp_review_count,
     )
     result = compute_qualification(inp)
     biz.qualification_score = result.score  # type: ignore[assignment]

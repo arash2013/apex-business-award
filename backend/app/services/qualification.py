@@ -9,8 +9,6 @@ class QualificationInput:
     google_review_count: int
     google_last_review_date: date | None
     google_owner_response_rate: float | None  # 0-100 percent
-    yelp_rating: float | None
-    yelp_review_count: int | None
 
 
 @dataclass
@@ -53,17 +51,17 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
     # ── Scoring ───────────────────────────────────────────────────────────────
     breakdown: dict[str, float] = {}
 
-    # 1. Google rating (0–35 pts): linear scale from 4.0 to 5.0
-    rating_pts = min(35.0, ((data.google_rating - 4.0) / 1.0) * 35.0)
+    # 1. Google rating (0–40 pts): linear scale from 4.0 to 5.0
+    rating_pts = min(40.0, ((data.google_rating - 4.0) / 1.0) * 40.0)
     breakdown["google_rating"] = round(rating_pts, 2)
 
-    # 2. Review count (0–25 pts): log scale, caps at 500 reviews
+    # 2. Review count (0–30 pts): log scale, caps at 500 reviews
     import math
 
     count = min(data.google_review_count, 500)
-    # 50 reviews → ~0 pts, 500 reviews → 25 pts
-    count_pts = max(0.0, (math.log10(count / 50) / math.log10(10)) * 25.0)
-    count_pts = min(25.0, count_pts)
+    # 50 reviews → ~0 pts, 500 reviews → 30 pts
+    count_pts = max(0.0, (math.log10(count / 50) / math.log10(10)) * 30.0)
+    count_pts = min(30.0, count_pts)
     breakdown["review_count"] = round(count_pts, 2)
 
     # 3. Recency (0–20 pts)
@@ -84,15 +82,6 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
     else:
         response_pts = 0.0
     breakdown["owner_response_rate"] = round(response_pts, 2)
-
-    # 5. Yelp cross-reference bonus (0–10 pts)
-    yelp_pts = 0.0
-    if data.yelp_rating is not None and data.yelp_review_count:
-        if data.yelp_rating >= 4.0 and data.yelp_review_count >= 20:
-            yelp_pts = 10.0
-        elif data.yelp_rating >= 4.0:
-            yelp_pts = 5.0
-    breakdown["yelp_bonus"] = yelp_pts
 
     score = sum(breakdown.values())
     score = round(min(100.0, score), 2)

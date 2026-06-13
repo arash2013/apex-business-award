@@ -11,8 +11,6 @@ def _input(**overrides) -> QualificationInput:
         google_review_count=200,
         google_last_review_date=date.today() - timedelta(days=30),
         google_owner_response_rate=75.0,
-        yelp_rating=4.7,
-        yelp_review_count=100,
     )
     defaults.update(overrides)
     return QualificationInput(**defaults)
@@ -21,7 +19,7 @@ def _input(**overrides) -> QualificationInput:
 def test_fully_qualified_business_scores_high():
     result = compute_qualification(_input())
     assert result.qualified is True
-    assert result.score > 80
+    assert result.score > 75
 
 
 def test_low_rating_disqualifies():
@@ -54,8 +52,6 @@ def test_score_capped_at_100():
             google_review_count=500,
             google_last_review_date=date.today(),
             google_owner_response_rate=100.0,
-            yelp_rating=5.0,
-            yelp_review_count=200,
         )
     )
     assert result.score <= 100.0
@@ -67,7 +63,7 @@ def test_breakdown_keys_present():
     assert "review_count" in result.breakdown
     assert "recency" in result.breakdown
     assert "owner_response_rate" in result.breakdown
-    assert "yelp_bonus" in result.breakdown
+    assert "yelp_bonus" not in result.breakdown
 
 
 def test_recency_scoring():
@@ -83,11 +79,6 @@ def test_recency_scoring():
     assert r_3mo.breakdown["recency"] == 20.0
     assert r_6mo.breakdown["recency"] == 15.0
     assert r_12mo.breakdown["recency"] == 10.0
-
-
-def test_no_yelp_data_gives_zero_yelp_bonus():
-    result = compute_qualification(_input(yelp_rating=None, yelp_review_count=None))
-    assert result.breakdown["yelp_bonus"] == 0.0
 
 
 # ── Boundary conditions ───────────────────────────────────────────────────────
@@ -131,29 +122,12 @@ def test_owner_response_rate_50_pct():
     assert result.breakdown["owner_response_rate"] == 5.0
 
 
-# ── Yelp bonus edge cases ─────────────────────────────────────────────────────
-def test_yelp_high_rating_low_count_gives_partial_credit():
-    # rating ≥ 4.0 but count < 20 → 5 pts
-    result = compute_qualification(_input(yelp_rating=4.5, yelp_review_count=10))
-    assert result.breakdown["yelp_bonus"] == 5.0
-
-
-def test_yelp_low_rating_gives_no_bonus():
-    result = compute_qualification(_input(yelp_rating=3.9, yelp_review_count=50))
-    assert result.breakdown["yelp_bonus"] == 0.0
-
-
-def test_yelp_full_bonus_requires_rating_and_count():
-    result = compute_qualification(_input(yelp_rating=4.2, yelp_review_count=20))
-    assert result.breakdown["yelp_bonus"] == 10.0
-
-
 # ── Review count scoring ──────────────────────────────────────────────────────
 def test_review_count_caps_at_500():
     r_500 = compute_qualification(_input(google_review_count=500))
     r_999 = compute_qualification(_input(google_review_count=999))
     assert r_500.breakdown["review_count"] == r_999.breakdown["review_count"]
-    assert r_500.breakdown["review_count"] == 25.0
+    assert r_500.breakdown["review_count"] == 30.0
 
 
 # ── Recency boundary: exactly 90 / 180 / 365 days ────────────────────────────

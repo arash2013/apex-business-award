@@ -13,8 +13,6 @@ def _input(**overrides) -> QualificationInput:
         google_review_count=200,
         google_last_review_date=date.today() - timedelta(days=30),
         google_owner_response_rate=75.0,
-        yelp_rating=4.7,
-        yelp_review_count=100,
     )
     defaults.update(overrides)
     return QualificationInput(**defaults)
@@ -80,14 +78,14 @@ def test_low_rating_and_low_count_both_reported():
 
 # ── Scoring math ───────────────────────────────────────────────────────────
 
-def test_perfect_rating_gives_35_pts():
+def test_perfect_rating_gives_40_pts():
     result = compute_qualification(_input(google_rating=5.0))
-    assert result.breakdown["google_rating"] == 35.0
+    assert result.breakdown["google_rating"] == 40.0
 
 
-def test_midpoint_rating_4_5_gives_17_5_pts():
+def test_midpoint_rating_4_5_gives_20_pts():
     result = compute_qualification(_input(google_rating=4.5))
-    assert result.breakdown["google_rating"] == pytest.approx(17.5, abs=0.1)
+    assert result.breakdown["google_rating"] == pytest.approx(20.0, abs=0.1)
 
 
 def test_owner_response_rate_zero_gives_zero_pts():
@@ -103,21 +101,6 @@ def test_owner_response_rate_100_gives_10_pts():
 def test_owner_response_rate_none_gives_zero_pts():
     result = compute_qualification(_input(google_owner_response_rate=None))
     assert result.breakdown["owner_response_rate"] == 0.0
-
-
-def test_yelp_rating_below_4_gives_zero_bonus():
-    result = compute_qualification(_input(yelp_rating=3.9, yelp_review_count=50))
-    assert result.breakdown["yelp_bonus"] == 0.0
-
-
-def test_yelp_rating_4_low_count_gives_5_pts():
-    result = compute_qualification(_input(yelp_rating=4.0, yelp_review_count=10))
-    assert result.breakdown["yelp_bonus"] == 5.0
-
-
-def test_yelp_rating_4_sufficient_count_gives_10_pts():
-    result = compute_qualification(_input(yelp_rating=4.0, yelp_review_count=20))
-    assert result.breakdown["yelp_bonus"] == 10.0
 
 
 def test_recency_90_days_exactly_gives_20_pts():

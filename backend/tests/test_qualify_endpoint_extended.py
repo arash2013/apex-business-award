@@ -13,8 +13,6 @@ async def test_qualify_returns_breakdown():
         "google_review_count": 200,
         "google_last_review_date": "2026-04-01",
         "google_owner_response_rate": 75.0,
-        "yelp_rating": 4.7,
-        "yelp_review_count": 100,
     }
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post("/api/v1/qualify", json=payload)
@@ -24,7 +22,7 @@ async def test_qualify_returns_breakdown():
     assert "review_count" in data["breakdown"]
     assert "recency" in data["breakdown"]
     assert "owner_response_rate" in data["breakdown"]
-    assert "yelp_bonus" in data["breakdown"]
+    assert "yelp_bonus" not in data["breakdown"]
 
 
 @pytest.mark.asyncio
@@ -57,7 +55,7 @@ async def test_qualify_rating_below_4_0():
 
 @pytest.mark.asyncio
 async def test_qualify_missing_optional_fields():
-    """Only required fields sent; optional yelp + owner_response omitted."""
+    """Only required fields sent; owner_response omitted."""
     payload = {
         "google_rating": 4.5,
         "google_review_count": 100,
@@ -68,7 +66,6 @@ async def test_qualify_missing_optional_fields():
     assert response.status_code == 200
     data = response.json()
     assert data["qualified"] is True
-    assert data["breakdown"]["yelp_bonus"] == 0.0
     assert data["breakdown"]["owner_response_rate"] == 0.0
 
 

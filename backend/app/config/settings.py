@@ -27,7 +27,6 @@ class Settings(BaseSettings):
 
     # External APIs
     google_places_api_key: str = ""
-    yelp_api_key: str = ""
 
     # Email
     sendgrid_api_key: str = ""
