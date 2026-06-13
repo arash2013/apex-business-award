@@ -1,5 +1,5 @@
 """Tests for the autocomplete and by-place-id qualification endpoints."""
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -13,24 +13,25 @@ from app.main import app
 _AUTOCOMPLETE_URL = "/api/v1/qualify/autocomplete"
 _BY_PLACE_ID_URL = "/api/v1/qualify/by-place-id"
 
+# Find Place from Text response format (used by autocomplete primary path)
 _MOCK_AUTOCOMPLETE_RESPONSE = {
-    "predictions": [
+    "candidates": [
         {
             "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
-            "structured_formatting": {
-                "main_text": "Acme Barbershop",
-                "secondary_text": "123 Main St, Houston, TX",
-            },
+            "name": "Acme Barbershop",
+            "formatted_address": "123 Main St, Houston, TX",
         },
         {
             "place_id": "ChIJABC123",
-            "structured_formatting": {
-                "main_text": "Acme Auto",
-                "secondary_text": "456 Oak Ave, Houston, TX",
-            },
+            "name": "Acme Auto",
+            "formatted_address": "456 Oak Ave, Houston, TX",
         },
-    ]
+    ],
+    "status": "OK",
 }
+
+# Timestamp ~30 days before 2026-06-13 (well within the 12-month recency cutoff)
+_RECENT_REVIEW_TS = 1_778_803_200  # 2026-05-14
 
 _MOCK_PLACE_DETAILS_RESPONSE = {
     "result": {
@@ -38,14 +39,13 @@ _MOCK_PLACE_DETAILS_RESPONSE = {
         "formatted_address": "123 Main St, Houston, TX 77002, USA",
         "rating": 4.7,
         "user_ratings_total": 312,
-        "reviews": [{"time": 1_740_000_000}],
+        "reviews": [{"time": _RECENT_REVIEW_TS}],
     }
 }
 
 
 def _mock_http_response(json_body: dict, status_code: int = 200):
     """Return a mock httpx response."""
-    from unittest.mock import MagicMock
     import httpx
 
     resp = MagicMock(spec=httpx.Response)
@@ -53,6 +53,25 @@ def _mock_http_response(json_body: dict, status_code: int = 200):
     resp.json.return_value = json_body
     resp.raise_for_status = MagicMock()
     return resp
+
+
+def _make_internal_client_mock(get_return_value):
+    """
+    Build a mock for httpx.AsyncClient used *inside* the qualify module.
+
+    The qualify endpoints open their own `async with httpx.AsyncClient(...) as client:`
+    context. We patch `app.api.qualify.httpx.AsyncClient` so only those internal
+    calls are intercepted — the test's own AsyncClient (via ASGITransport) is a
+    different import and is not affected.
+    """
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=get_return_value)
+    # Support `async with httpx.AsyncClient(...) as client:`
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=mock_client)
+    cm.__aexit__ = AsyncMock(return_value=False)
+    mock_cls = MagicMock(return_value=cm)
+    return mock_cls, mock_client
 
 
 # ---------------------------------------------------------------------------
@@ -63,12 +82,14 @@ def _mock_http_response(json_body: dict, status_code: int = 200):
 @pytest.mark.asyncio
 async def test_autocomplete_returns_suggestions():
     """Valid query returns a list of business suggestions."""
+    mock_cls, _ = _make_internal_client_mock(
+        _mock_http_response(_MOCK_AUTOCOMPLETE_RESPONSE)
+    )
     with (
         patch("app.api.qualify.settings") as mock_settings,
-        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+        patch("app.api.qualify.httpx.AsyncClient", mock_cls),
     ):
         mock_settings.google_places_api_key = "test-key"
-        mock_get.return_value = _mock_http_response(_MOCK_AUTOCOMPLETE_RESPONSE)
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -124,23 +145,21 @@ async def test_autocomplete_missing_api_key_returns_503():
 async def test_autocomplete_caps_at_five_results():
     """At most 5 predictions are returned regardless of API response size."""
     many_predictions = {
-        "predictions": [
+        "candidates": [
             {
                 "place_id": f"ChIJ{i}",
-                "structured_formatting": {
-                    "main_text": f"Business {i}",
-                    "secondary_text": f"{i} St",
-                },
+                "name": f"Business {i}",
+                "formatted_address": f"{i} St",
             }
             for i in range(10)
         ]
     }
+    mock_cls, _ = _make_internal_client_mock(_mock_http_response(many_predictions))
     with (
         patch("app.api.qualify.settings") as mock_settings,
-        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+        patch("app.api.qualify.httpx.AsyncClient", mock_cls),
     ):
         mock_settings.google_places_api_key = "test-key"
-        mock_get.return_value = _mock_http_response(many_predictions)
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -159,12 +178,14 @@ async def test_autocomplete_caps_at_five_results():
 @pytest.mark.asyncio
 async def test_by_place_id_qualified_business():
     """Valid place_id with qualifying metrics returns a full result."""
+    mock_cls, _ = _make_internal_client_mock(
+        _mock_http_response(_MOCK_PLACE_DETAILS_RESPONSE)
+    )
     with (
         patch("app.api.qualify.settings") as mock_settings,
-        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+        patch("app.api.qualify.httpx.AsyncClient", mock_cls),
     ):
         mock_settings.google_places_api_key = "test-key"
-        mock_get.return_value = _mock_http_response(_MOCK_PLACE_DETAILS_RESPONSE)
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -188,12 +209,12 @@ async def test_by_place_id_qualified_business():
 @pytest.mark.asyncio
 async def test_by_place_id_not_found_returns_404():
     """place_id that returns empty result from Places API yields 404."""
+    mock_cls, _ = _make_internal_client_mock(_mock_http_response({"result": {}}))
     with (
         patch("app.api.qualify.settings") as mock_settings,
-        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+        patch("app.api.qualify.httpx.AsyncClient", mock_cls),
     ):
         mock_settings.google_places_api_key = "test-key"
-        mock_get.return_value = _mock_http_response({"result": {}})
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -245,12 +266,12 @@ async def test_by_place_id_low_rating_not_qualified():
             "reviews": [{"time": 1_740_000_000}],
         }
     }
+    mock_cls, _ = _make_internal_client_mock(_mock_http_response(low_rating_response))
     with (
         patch("app.api.qualify.settings") as mock_settings,
-        patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get,
+        patch("app.api.qualify.httpx.AsyncClient", mock_cls),
     ):
         mock_settings.google_places_api_key = "test-key"
-        mock_get.return_value = _mock_http_response(low_rating_response)
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
