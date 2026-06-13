@@ -41,7 +41,7 @@ export function Nav() {
             <LogoMark />
             <div className="leading-none">
               <span className="text-gold font-bold text-sm tracking-wide block">{brand.name}</span>
-              <span className="text-white/30 text-[9px] uppercase tracking-ultra block mt-0.5">{brand.city} · {brand.year}</span>
+              <span className="text-white/30 text-[9px] uppercase tracking-ultra block mt-0.5">Est. {brand.year}</span>
             </div>
           </Link>
 

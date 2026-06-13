@@ -6,7 +6,7 @@ import { SEED_BUSINESSES, QUALIFIED_BUSINESSES } from "@/lib/seed-data";
 const STATS = [
   { value: String(QUALIFIED_BUSINESSES.length), label: "Qualified Businesses" },
   { value: String([...new Set(QUALIFIED_BUSINESSES.map((b) => b.category))].length), label: "Categories" },
-  { value: brand.city, label: "Launch City" },
+  { value: "100%", label: "Data-Driven" },
   { value: String(brand.year), label: "Award Year" },
 ];
 
@@ -44,7 +44,7 @@ export default function HomePage() {
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-3 mb-7">
             <span className="h-px w-8 bg-gold/50" />
-            <p className="section-eyebrow">{brand.city}, {brand.state} · {brand.year}</p>
+            <p className="section-eyebrow">Est. {brand.year} · National Recognition Program</p>
             <span className="h-px w-8 bg-gold/50" />
           </div>
 
@@ -142,8 +142,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <p className="section-eyebrow mb-2">{brand.city}, {brand.state}</p>
-              <h2 className="heading-display text-3xl font-bold text-navy">{brand.year} Award Recipients</h2>
+              <p className="section-eyebrow mb-2">{brand.year} Cohort</p>
+              <h2 className="heading-display text-3xl font-bold text-navy">Award Recipients</h2>
             </div>
             <Link href="/winners" className="text-gold hover:underline text-sm font-semibold hidden sm:block">
               View all {QUALIFIED_BUSINESSES.length} →
@@ -175,10 +175,10 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
 
             {/* Basic */}
-            <div className="rounded-xl p-7 border border-cream-200 bg-white text-navy flex flex-col">
+            <div className="rounded-xl p-7 border border-cream-200 bg-white text-navy flex flex-col h-full">
               <p className="section-label mb-4">Basic</p>
               <div className="heading-display text-4xl font-bold mb-1 text-navy">${brand.pricing.basic}</div>
               <p className="text-xs text-gray-400 mb-6">one-time</p>
@@ -202,7 +202,7 @@ export default function HomePage() {
 
             {/* Pro — most popular */}
             <div
-              className="rounded-xl p-7 border-2 border-gold bg-navy text-white shadow-2xl md:-translate-y-2 flex flex-col"
+              className="rounded-xl p-7 border-2 border-gold bg-navy text-white flex flex-col h-full"
               style={{ boxShadow: "0 25px 60px -10px rgba(27,43,75,0.5)" }}
             >
               <div className="section-eyebrow mb-4">★ Most Popular</div>
@@ -228,7 +228,7 @@ export default function HomePage() {
             </div>
 
             {/* Premium */}
-            <div className="relative p-[2px] rounded-xl overflow-hidden shadow-2xl">
+            <div className="relative p-[2px] rounded-xl overflow-hidden shadow-2xl h-full">
               <div className="premium-shimmer absolute inset-0 rounded-xl" aria-hidden="true" />
               <div
                 className="relative rounded-[10px] p-7 text-white flex flex-col h-full"

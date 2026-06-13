@@ -33,7 +33,7 @@ export function Footer() {
             </div>
             <p className="text-white/40 text-xs leading-relaxed">{brand.tagline}</p>
             <p className="text-white/20 text-xs mt-3 uppercase tracking-widest">
-              {brand.city}, {brand.state} · {brand.year}
+              Est. {brand.year}
             </p>
           </div>
 

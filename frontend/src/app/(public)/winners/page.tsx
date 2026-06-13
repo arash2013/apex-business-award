@@ -5,7 +5,7 @@ import { WinnersClient } from "./WinnersClient";
 
 export const metadata: Metadata = {
   title: `${brand.year} Winners`,
-  description: `Browse ${brand.year} ${brand.name} winners in ${brand.city}, ${brand.state}`,
+  description: `Browse ${brand.year} ${brand.name} award recipients`,
 };
 
 export default function WinnersPage() {

@@ -11,12 +11,12 @@ const STEPS = [
   {
     n: "1",
     title: "Find your listing",
-    desc: "Search for your business on Google Maps.",
+    desc: 'Search for your business on Google Maps, then tap Share → "Copy link".',
   },
   {
     n: "2",
-    title: "Copy the URL",
-    desc: "Copy the full URL from your browser's address bar.",
+    title: "Copy any Google link",
+    desc: "Share links, maps.app.goo.gl links, or the full URL — all work.",
   },
   {
     n: "3",
@@ -43,8 +43,9 @@ export default function ApplyPage() {
           Check Your Qualification
         </h1>
         <p className="text-gray-500 text-base leading-relaxed">
-          Paste your Google Maps business URL and we&apos;ll score your business
-          against the {brand.year} criteria.
+          Paste any Google link to your business and we&apos;ll score it against
+          the {brand.year} criteria — share links, goo.gl links, and full Maps
+          URLs all work.
         </p>
       </div>
 
