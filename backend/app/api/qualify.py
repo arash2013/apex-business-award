@@ -78,9 +78,16 @@ def _extract_place_id(url: str) -> str | None:
 
 
 def _extract_cid(url: str) -> str | None:
-    """Extract CID from ?cid= style Maps URLs."""
+    """Extract CID (decimal string) from ?cid= or hex !1s0x...:0x... in data param."""
     qs = parse_qs(urlparse(url).query)
-    return qs.get("cid", [None])[0]
+    if cid := qs.get("cid", [None])[0]:
+        return cid
+    # Hex CID embedded in data parameter: !1s0x<high>:0x<low>
+    match = re.search(r"!1s(0x[0-9a-f]+:0x[0-9a-f]+)", url, re.IGNORECASE)
+    if match:
+        high, low = match.group(1).split(":")
+        return str((int(high, 16) << 64) | int(low, 16)) if int(high, 16) else str(int(low, 16))
+    return None
 
 
 async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
@@ -101,16 +108,6 @@ async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     # CID → Find Place lookup
     cid = _extract_cid(resolved)
     if cid:
-        resp = await client.get(
-            _PLACES_FIND,
-            params={
-                "input": cid,
-                "inputtype": "phonenumber",  # not used — CID lookup via text
-                "fields": "place_id",
-                "key": settings.google_places_api_key,
-            },
-        )
-        # Use text search with the CID as a fallback
         resp = await client.get(
             _PLACES_FIND,
             params={
