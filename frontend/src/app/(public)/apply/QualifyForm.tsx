@@ -24,6 +24,14 @@ const BREAKDOWN_LABELS: Record<string, string> = {
   yelp_bonus: "Yelp Cross-reference",
 };
 
+const BREAKDOWN_MAX: Record<string, number> = {
+  google_rating: 35,
+  review_count: 25,
+  recency: 20,
+  owner_response_rate: 10,
+  yelp_bonus: 10,
+};
+
 export default function QualifyForm() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -129,22 +137,25 @@ export default function QualifyForm() {
             <p className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-3">
               Score Breakdown
             </p>
-            {Object.entries(result.breakdown).map(([key, pts]) => (
-              <div key={key} className="flex items-center gap-2 text-sm">
-                <span className="text-navy font-medium w-44 shrink-0">
-                  {BREAKDOWN_LABELS[key] ?? key}
-                </span>
-                <div className="flex-1 bg-gray-100 rounded-full h-2">
-                  <div
-                    className="bg-gold h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (pts / 35) * 100)}%` }}
-                  />
+            {Object.entries(result.breakdown).map(([key, pts]) => {
+              const max = BREAKDOWN_MAX[key] ?? 35;
+              return (
+                <div key={key} className="flex items-center gap-2 text-sm">
+                  <span className="text-navy font-medium w-44 shrink-0">
+                    {BREAKDOWN_LABELS[key] ?? key}
+                  </span>
+                  <div className="flex-1 bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-gold h-2 rounded-full"
+                      style={{ width: `${Math.min(100, (pts / max) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-400 w-16 text-right shrink-0">
+                    {pts} / {max} pts
+                  </span>
                 </div>
-                <span className="text-gold font-semibold w-12 text-right shrink-0">
-                  {pts} pts
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Disqualification reasons */}
