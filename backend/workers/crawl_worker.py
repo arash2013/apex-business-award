@@ -19,7 +19,7 @@ from app.models import (
     CrawlStatus,
 )
 from app.config.settings import settings
-from workers.qualification import QualificationInput, compute_qualification
+from app.services.qualification import QualificationInput, compute_qualification
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ async def _run_crawl(job_id: UUID) -> None:
 async def _fetch_google_places(
     area: Area | None, category: Category | None
 ) -> list[dict]:
-    """Search Google Places Text Search for businesses in the given area/category."""
+    """Search Google Places Text Search, then enrich each result with review date."""
     if not settings.google_places_api_key:
         logger.warning("GOOGLE_PLACES_API_KEY not set — skipping crawl")
         return []
@@ -111,7 +111,7 @@ async def _fetch_google_places(
                     "rating": place.get("rating"),
                     "review_count": place.get("user_ratings_total"),
                     "last_review_date": last_review_date,
-                    "owner_response_rate": None,
+                    "owner_response_rate": None,  # not exposed by Places API
                 }
             )
 

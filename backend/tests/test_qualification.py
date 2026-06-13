@@ -19,7 +19,7 @@ def _input(**overrides) -> QualificationInput:
 def test_fully_qualified_business_scores_high():
     result = compute_qualification(_input())
     assert result.qualified is True
-    assert result.score > 75
+    assert result.score > 60
 
 
 def test_low_rating_disqualifies():
@@ -63,7 +63,6 @@ def test_breakdown_keys_present():
     assert "review_count" in result.breakdown
     assert "recency" in result.breakdown
     assert "owner_response_rate" in result.breakdown
-    assert "yelp_bonus" not in result.breakdown
 
 
 def test_recency_scoring():

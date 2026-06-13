@@ -1,8 +1,11 @@
 """Email worker — SendGrid outreach send + follow-up scheduling."""
 
+import html
 import logging
 from datetime import datetime, timezone
 from uuid import UUID
+
+from sqlalchemy import select
 
 from app.db import AsyncSessionLocal
 from app.models import Outreach, OutreachStatus, Business, Award, EmailTemplate
@@ -20,9 +23,7 @@ async def _send_outreach(outreach_id: UUID) -> None:
             return
 
         template = await db.execute(
-            # type: ignore[arg-type]
-            __import__("sqlalchemy", fromlist=["select"])
-            .select(EmailTemplate)
+            select(EmailTemplate)
             .where(EmailTemplate.name == f"outreach_step_{outreach.sequence_step}")
             .where(EmailTemplate.is_active.is_(True))
         )
@@ -35,7 +36,6 @@ async def _send_outreach(outreach_id: UUID) -> None:
         business: Business | None = await db.get(Business, outreach.business_id)
         award: Award | None = await db.get(Award, outreach.award_id)
 
-        # Render template (merge fields)
         subject = _render(tmpl.subject, business, award)
         body_html = _render(tmpl.body_html, business, award)
         body_text = _render(tmpl.body_text, business, award)
@@ -60,7 +60,6 @@ async def _send_outreach(outreach_id: UUID) -> None:
         outreach.sendgrid_message_id = message_id
         await db.commit()
 
-        # schedule follow-up
         if outreach.sequence_step in FOLLOW_UP_DAYS:
             next_step = outreach.sequence_step + 1
             delay_days = FOLLOW_UP_DAYS[outreach.sequence_step]
@@ -74,8 +73,6 @@ async def _send_outreach(outreach_id: UUID) -> None:
 
 
 def _render(template: str, business: Business | None, award: Award | None) -> str:
-    import html
-
     fields = {
         "business_name": html.escape(business.name if business else ""),
         "award_tier": html.escape(award.tier if award else ""),
@@ -89,6 +86,7 @@ def _render(template: str, business: Business | None, award: Award | None) -> st
 def _schedule_follow_up(
     business_id: str, award_id: str, email: str, step: int, delay_days: int
 ) -> None:
+    # Imported here to avoid circular import at module load time (tasks → workers → tasks)
     from workers.tasks import send_outreach_follow_up
 
     send_outreach_follow_up.apply_async(
