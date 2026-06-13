@@ -266,7 +266,6 @@ async def autocomplete(q: str) -> list[AutocompleteResult]:
             _PLACES_AUTOCOMPLETE,
             params={
                 "input": q,
-                "types": "establishment",
                 "fields": "place_id,description,structured_formatting",
                 "key": settings.google_places_api_key,
             },
