@@ -83,7 +83,7 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
         response_pts = min(10.0, (data.google_owner_response_rate / 100.0) * 10.0)
     else:
         response_pts = 0.0
-    breakdown["owner_response"] = round(response_pts, 2)
+    breakdown["owner_response_rate"] = round(response_pts, 2)
 
     # 5. Yelp cross-reference bonus (0–10 pts)
     yelp_pts = 0.0

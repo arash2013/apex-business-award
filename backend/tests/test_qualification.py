@@ -66,7 +66,7 @@ def test_breakdown_keys_present():
     assert "google_rating" in result.breakdown
     assert "review_count" in result.breakdown
     assert "recency" in result.breakdown
-    assert "owner_response" in result.breakdown
+    assert "owner_response_rate" in result.breakdown
     assert "yelp_bonus" in result.breakdown
 
 
@@ -113,22 +113,22 @@ def test_multiple_disqualification_reasons():
 # ── Owner response rate scoring ───────────────────────────────────────────────
 def test_owner_response_rate_zero_gives_no_pts():
     result = compute_qualification(_input(google_owner_response_rate=0.0))
-    assert result.breakdown["owner_response"] == 0.0
+    assert result.breakdown["owner_response_rate"] == 0.0
 
 
 def test_owner_response_rate_full_gives_max_pts():
     result = compute_qualification(_input(google_owner_response_rate=100.0))
-    assert result.breakdown["owner_response"] == 10.0
+    assert result.breakdown["owner_response_rate"] == 10.0
 
 
 def test_owner_response_rate_none_gives_zero():
     result = compute_qualification(_input(google_owner_response_rate=None))
-    assert result.breakdown["owner_response"] == 0.0
+    assert result.breakdown["owner_response_rate"] == 0.0
 
 
 def test_owner_response_rate_50_pct():
     result = compute_qualification(_input(google_owner_response_rate=50.0))
-    assert result.breakdown["owner_response"] == 5.0
+    assert result.breakdown["owner_response_rate"] == 5.0
 
 
 # ── Yelp bonus edge cases ─────────────────────────────────────────────────────

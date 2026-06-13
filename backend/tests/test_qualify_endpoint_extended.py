@@ -23,7 +23,7 @@ async def test_qualify_returns_breakdown():
     assert "google_rating" in data["breakdown"]
     assert "review_count" in data["breakdown"]
     assert "recency" in data["breakdown"]
-    assert "owner_response" in data["breakdown"]
+    assert "owner_response_rate" in data["breakdown"]
     assert "yelp_bonus" in data["breakdown"]
 
 
@@ -69,7 +69,7 @@ async def test_qualify_missing_optional_fields():
     data = response.json()
     assert data["qualified"] is True
     assert data["breakdown"]["yelp_bonus"] == 0.0
-    assert data["breakdown"]["owner_response"] == 0.0
+    assert data["breakdown"]["owner_response_rate"] == 0.0
 
 
 @pytest.mark.asyncio

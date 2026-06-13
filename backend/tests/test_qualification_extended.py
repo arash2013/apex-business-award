@@ -92,17 +92,17 @@ def test_midpoint_rating_4_5_gives_17_5_pts():
 
 def test_owner_response_rate_zero_gives_zero_pts():
     result = compute_qualification(_input(google_owner_response_rate=0.0))
-    assert result.breakdown["owner_response"] == 0.0
+    assert result.breakdown["owner_response_rate"] == 0.0
 
 
 def test_owner_response_rate_100_gives_10_pts():
     result = compute_qualification(_input(google_owner_response_rate=100.0))
-    assert result.breakdown["owner_response"] == 10.0
+    assert result.breakdown["owner_response_rate"] == 10.0
 
 
 def test_owner_response_rate_none_gives_zero_pts():
     result = compute_qualification(_input(google_owner_response_rate=None))
-    assert result.breakdown["owner_response"] == 0.0
+    assert result.breakdown["owner_response_rate"] == 0.0
 
 
 def test_yelp_rating_below_4_gives_zero_bonus():

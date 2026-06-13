@@ -145,7 +145,7 @@ async def test_qualify_endpoint_response_shape():
         "google_rating",
         "review_count",
         "recency",
-        "owner_response",
+        "owner_response_rate",
         "yelp_bonus",
     ):
         assert key in data["breakdown"], f"Missing breakdown key: {key}"
