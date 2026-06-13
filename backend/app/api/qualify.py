@@ -1,7 +1,7 @@
 import logging
 import re
 from datetime import date, datetime, timezone
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -18,7 +18,6 @@ router = APIRouter(prefix="/qualify", tags=["qualification"])
 
 _PLACES_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json"
 _PLACES_FIND = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
-_YELP_SEARCH = "https://api.yelp.com/v3/businesses/search"
 
 
 class QualifyRequest(BaseModel):
@@ -26,8 +25,6 @@ class QualifyRequest(BaseModel):
     google_review_count: int = Field(..., ge=0, le=1_000_000)
     google_last_review_date: date | None = None
     google_owner_response_rate: float | None = Field(None, ge=0.0, le=100.0)
-    yelp_rating: float | None = Field(None, ge=0.0, le=5.0)
-    yelp_review_count: int | None = Field(None, ge=0, le=1_000_000)
 
 
 class QualifyResponse(BaseModel):
@@ -44,8 +41,6 @@ async def check_qualification(body: QualifyRequest) -> QualifyResponse:
         google_review_count=body.google_review_count,
         google_last_review_date=body.google_last_review_date,
         google_owner_response_rate=body.google_owner_response_rate,
-        yelp_rating=body.yelp_rating,
-        yelp_review_count=body.yelp_review_count,
     )
     result = compute_qualification(inp)
     return QualifyResponse(
@@ -81,14 +76,12 @@ def _extract_business_name(url: str) -> str | None:
     """Extract business name from /maps/place/<name>/ URL path segment."""
     match = re.search(r"/maps/place/([^/@?]+)", url)
     if match:
-        from urllib.parse import unquote_plus
         return unquote_plus(match.group(1).replace("+", " "))
     return None
 
 
 async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     """Return a Place ID from any Google Maps URL, following redirects if needed."""
-    # Follow redirects (short URLs like goo.gl/maps/... or maps.app.goo.gl/...)
     resolved = url
     if "goo.gl" in url or "maps.app" in url:
         try:
@@ -101,7 +94,6 @@ async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     if place_id:
         return place_id
 
-    # Business name text search (works for /maps/place/Name/data=... URLs)
     name = _extract_business_name(resolved)
     if name:
         resp = await client.get(
@@ -158,28 +150,6 @@ async def _fetch_place_details(
     }
 
 
-async def _fetch_yelp(client: httpx.AsyncClient, name: str, address: str) -> dict:
-    if not settings.yelp_api_key or not address:
-        return {}
-    try:
-        resp = await client.get(
-            _YELP_SEARCH,
-            params={"term": name, "location": address, "limit": 1},
-            headers={"Authorization": f"Bearer {settings.yelp_api_key}"},
-        )
-        resp.raise_for_status()
-        businesses = resp.json().get("businesses", [])
-        if businesses:
-            biz = businesses[0]
-            return {
-                "yelp_rating": biz.get("rating"),
-                "yelp_review_count": biz.get("review_count"),
-            }
-    except Exception:
-        logger.warning("Yelp lookup failed for %s", name)
-    return {}
-
-
 @router.post("/by-url", response_model=QualifyByUrlResponse)
 async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
     if not settings.google_places_api_key:
@@ -191,15 +161,12 @@ async def qualify_by_url(body: QualifyByUrlRequest) -> QualifyByUrlResponse:
     async with httpx.AsyncClient(timeout=15) as client:
         place_id = await _resolve_place_id(client, body.google_maps_url)
         details = await _fetch_place_details(client, place_id)
-        yelp = await _fetch_yelp(client, details["name"], details["address"])
 
     inp = QualificationInput(
         google_rating=float(details["rating"] or 0),
         google_review_count=int(details["review_count"] or 0),
         google_last_review_date=details["last_review_date"],
         google_owner_response_rate=None,
-        yelp_rating=float(yelp["yelp_rating"]) if yelp.get("yelp_rating") else None,
-        yelp_review_count=yelp.get("yelp_review_count"),
     )
     result = compute_qualification(inp)
 

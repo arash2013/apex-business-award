@@ -21,7 +21,6 @@ const BREAKDOWN_LABELS: Record<string, string> = {
   review_count: "Review Count",
   recency: "Review Recency",
   owner_response_rate: "Owner Response Rate",
-  yelp_bonus: "Yelp Cross-reference",
 };
 
 const BREAKDOWN_MAX: Record<string, number> = {
@@ -29,7 +28,6 @@ const BREAKDOWN_MAX: Record<string, number> = {
   review_count: 25,
   recency: 20,
   owner_response_rate: 10,
-  yelp_bonus: 10,
 };
 
 export default function QualifyForm() {
