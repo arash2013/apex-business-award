@@ -271,7 +271,6 @@ async def autocomplete(
             _PLACES_TEXTSEARCH,
             params={
                 "query": q,
-                "fields": "place_id,name,formatted_address",
                 "key": settings.google_places_api_key,
             },
         )
