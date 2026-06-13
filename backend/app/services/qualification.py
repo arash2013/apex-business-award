@@ -1,6 +1,6 @@
+import math
 from dataclasses import dataclass
 from datetime import date, timedelta
-from decimal import Decimal
 
 
 @dataclass
@@ -56,8 +56,6 @@ def compute_qualification(data: QualificationInput) -> QualificationResult:
     breakdown["google_rating"] = round(rating_pts, 2)
 
     # 2. Review count (0–30 pts): log scale, caps at 500 reviews
-    import math
-
     count = min(data.google_review_count, 500)
     # 50 reviews → ~0 pts, 500 reviews → 30 pts
     count_pts = max(0.0, (math.log10(count / 50) / math.log10(10)) * 30.0)

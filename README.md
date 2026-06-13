@@ -1,8 +1,8 @@
 # Apex Business Award
 
-**Recognizing Excellence in Local Business** — Houston, TX · 2026
+**Recognizing Excellence in Local Business** — National · 2026
 
-A platform that identifies top-rated businesses using Google/Yelp data, notifies them of award eligibility, and sells them award packages.
+A platform that identifies top-rated businesses using verified Google data, notifies them of award eligibility, and sells them award packages.
 
 ## Quick Start (Docker)
 
@@ -27,10 +27,9 @@ docker compose -f docker-compose.dev.yml exec api alembic upgrade head
 ## Structure
 
 ```
-frontend/   Next.js 14 app router  →  Azure Static Web Apps
-backend/    FastAPI + Celery        →  Azure Container Apps
-terraform/  Infrastructure as Code  →  Azure (single prod environment)
-scripts/    bootstrap-azure.sh      →  one-time OIDC + role setup
+frontend/   Next.js 14 app router  →  Vercel
+backend/    FastAPI + Celery        →  Railway
+infra/      Terraform (Azure)       →  reserved for scaling
 ```
 
 ## Development
@@ -53,10 +52,31 @@ cd backend && pytest
 - `feature/*` → all new work, PR into `main`
 - `hotfix/*` → urgent fixes, PR into `main`
 
+Tag a release with `v<major>.<minor>.<patch>` to trigger a GitHub Release automatically.
+
+## Qualification API
+
+Businesses are scored against the following criteria using live Google Places data:
+
+| Signal | Requirement | Max pts |
+|--------|-------------|---------|
+| Google rating | ≥ 4.0 stars | 40 |
+| Review count | ≥ 50 reviews | 30 |
+| Review recency | at least 1 review within 12 months | 20 |
+| Owner response rate | based on last 90 days | 10 |
+
+### Key Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/qualify/autocomplete?q=` | Business search typeahead (Google Places) |
+| `POST` | `/api/v1/qualify/by-place-id` | Score a business by Google Place ID |
+| `POST` | `/api/v1/qualify` | Score a business from raw metrics (no API call) |
+
 ## Award Tiers
 
 | Tier    | Price | Includes |
 |---------|-------|----------|
-| Basic   | $197  | Digital badge + PDF certificate + directory listing |
-| Pro     | $397  | Basic + full profile page + social media kit |
-| Premium | $697  | Pro + physical award plaque |
+| Basic   | $199  | Digital badge + PDF certificate + directory listing |
+| Pro     | $249  | Basic + full profile page + social media kit |
+| Premium | $349  | Pro + physical award plaque |

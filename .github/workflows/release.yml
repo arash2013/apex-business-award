@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Find the previous tag to generate a diff-based changelog
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          # Collect conventional commits grouped by type
+          FEATURES=$(git log $RANGE --pretty=format:"- %s" --grep="^feat" | head -50)
+          FIXES=$(git log $RANGE --pretty=format:"- %s" --grep="^fix" | head -50)
+          CHORES=$(git log $RANGE --pretty=format:"- %s" --grep="^chore\|^refactor\|^docs" | head -50)
+
+          # Build changelog body
+          BODY=""
+          if [ -n "$FEATURES" ]; then
+            BODY="${BODY}## What's New\n${FEATURES}\n\n"
+          fi
+          if [ -n "$FIXES" ]; then
+            BODY="${BODY}## Bug Fixes\n${FIXES}\n\n"
+          fi
+          if [ -n "$CHORES" ]; then
+            BODY="${BODY}## Maintenance\n${CHORES}\n\n"
+          fi
+          if [ -z "$BODY" ]; then
+            BODY="See commit history for changes in this release."
+          fi
+
+          # Write to file to preserve newlines
+          printf "%b" "$BODY" > changelog.md
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: changelog.md
+          generate_release_notes: false
+          make_latest: true

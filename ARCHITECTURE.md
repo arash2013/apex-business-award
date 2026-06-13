@@ -7,19 +7,20 @@
 4. [CI/CD](#cicd)
 5. [Accounts & Services](#accounts--services)
 6. [Environment Variables Reference](#environment-variables-reference)
-7. [Scaling Path — Azure](#scaling-path--azure)
-8. [Scaling Path — AWS](#scaling-path--aws)
-9. [Award Tiers](#award-tiers)
-10. [Data Flow](#data-flow)
+7. [Qualification API](#qualification-api)
+8. [Scaling Path — Azure](#scaling-path--azure)
+9. [Scaling Path — AWS](#scaling-path--aws)
+10. [Award Tiers](#award-tiers)
+11. [Data Flow](#data-flow)
 
 ---
 
 ## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          USER BROWSER                           │
-└───────────────────────────┬─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        USER BROWSER                         │
+└───────────────────────────┬─────────────────────────────────┘
                             │
                    ┌────────▼────────┐
                    │  Vercel (CDN)   │  Next.js 14 frontend
@@ -38,16 +39,15 @@
            └─────────────┘  └────────────────┘
                                     │
                    ┌────────────────▼──────────┐
-                   │    Railway Worker service  │  Celery worker
-                   │    Railway Beat service    │  Celery beat scheduler
+                   │  Railway Worker + Beat     │  Celery worker / scheduler
                    └──────────────┬────────────┘
                                   │
-              ┌───────────────────┼───────────────────┐
-              │                   │                   │
-    ┌─────────▼──────┐  ┌─────────▼──────┐  ┌────────▼───────┐
-    │ Google Places  │  │   Yelp Fusion  │  │    SendGrid    │
-    │     API        │  │      API       │  │    (email)     │
-    └────────────────┘  └────────────────┘  └────────────────┘
+              ┌───────────────────┴─────────────┐
+              │                                 │
+    ┌─────────▼──────┐                ┌─────────▼──────┐
+    │ Google Places  │                │    SendGrid    │
+    │     API        │                │    (email)     │
+    └────────────────┘                └────────────────┘
 ```
 
 ---
@@ -67,7 +67,6 @@
 | Email | SendGrid | Free (100/day) | $0 |
 | Payments | Stripe | — | 2.9% + $0.30/txn |
 | Business data | Google Places API | Pay-per-use | ~$17/1K req |
-| Reviews X-ref | Yelp Fusion | Free tier | $0 |
 | CI/CD | GitHub Actions | Free | $0 |
 | **Total** | | | **~$5–30/mo** |
 
@@ -125,13 +124,25 @@ docker compose -f docker-compose.dev.yml exec api alembic upgrade head
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
 | `ci.yml` | PR to main, push to feature/* | Lint, type check, tests |
+| `release.yml` | push tag `v*` | Create GitHub Release with changelog |
 
 ### Deployment (no workflow needed)
 
 - **Vercel** — connect GitHub repo in dashboard → auto-deploys `frontend/` on push to `main`
 - **Railway** — connect GitHub repo in dashboard → auto-deploys `backend/` on push to `main`
 
-Both platforms build and deploy automatically. GitHub Actions only handles CI (tests/lint).
+Both platforms build and deploy automatically. GitHub Actions only handles CI (tests/lint) and releases.
+
+### Releases
+
+Tag a release to trigger the release workflow:
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+This creates a GitHub Release with an auto-generated changelog based on commits since the previous tag.
 
 ### Branch Strategy
 
@@ -156,10 +167,8 @@ hotfix/*      ← urgent fixes, PR into main
 | SendGrid | sendgrid.com | Transactional email | SendGrid dashboard |
 | Stripe | stripe.com | Payments | Stripe dashboard |
 | Google Cloud | console.cloud.google.com | Places API key | GCP console → Credentials |
-| Yelp | yelp.com/developers | Fusion API key | Yelp developer dashboard |
 | GitHub | github.com | Source control + CI | GitHub settings |
 | SerpAPI _(scale)_ | serpapi.com | Google search scraping | SerpAPI dashboard |
-| BrightData _(scale)_ | brightdata.com | Residential proxies for Yelp at scale | BrightData dashboard |
 
 ### GitHub Secrets (for CI)
 
@@ -179,7 +188,6 @@ Set these in **Vercel → Project → Settings → Environment Variables**:
 | `NEXT_PUBLIC_BRAND_NAME` | `Apex Business Award` |
 | `NEXT_PUBLIC_BRAND_SHORT` | `Apex` |
 | `NEXT_PUBLIC_BRAND_TAGLINE` | `Recognizing Excellence in Local Business` |
-| `NEXT_PUBLIC_BRAND_CITY` | `Houston` |
 | `NEXT_PUBLIC_BRAND_YEAR` | `2026` |
 | `NEXT_PUBLIC_BRAND_COLOR_PRIMARY` | `#1B2B4B` |
 | `NEXT_PUBLIC_BRAND_COLOR_ACCENT` | `#C9A84C` |
@@ -198,7 +206,6 @@ Set these in **Railway → Project → Variables** (shared across all services):
 | `ENVIRONMENT` | `production` |
 | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_hex(32))"` |
 | `GOOGLE_PLACES_API_KEY` | Google Cloud → Credentials |
-| `YELP_API_KEY` | Yelp Developer dashboard |
 | `SENDGRID_API_KEY` | SendGrid dashboard |
 | `SENDGRID_FROM_EMAIL` | `awards@apexbusinessaward.com` |
 | `SENDGRID_FROM_NAME` | `Apex Business Award` |
@@ -211,8 +218,6 @@ Set these in **Railway → Project → Variables** (shared across all services):
 | `BRAND_NAME` | `Apex Business Award` |
 | `BRAND_SHORT` | `Apex` |
 | `BRAND_YEAR` | `2026` |
-| `SERPAPI_KEY` | _(blank until needed at scale)_ |
-| `BRIGHTDATA_PROXY_URL` | _(blank until needed at scale)_ |
 
 ---
 
@@ -228,8 +233,7 @@ Full list of all variables. See `.env.example` for local dev values.
 | `REDIS_URL` | Yes | Redis connection string (`redis://...` or `rediss://...`) |
 | `ENVIRONMENT` | Yes | `development`, `test`, or `production` |
 | `SECRET_KEY` | Yes (prod) | JWT signing key — generate with `secrets.token_hex(32)` |
-| `GOOGLE_PLACES_API_KEY` | Yes | Google Cloud Places API — needed for crawl jobs |
-| `YELP_API_KEY` | No | Yelp Fusion API — adds cross-reference bonus to score |
+| `GOOGLE_PLACES_API_KEY` | Yes | Google Cloud Places API — needed for autocomplete and crawl jobs |
 | `SENDGRID_API_KEY` | Yes (prod) | Transactional email |
 | `SENDGRID_FROM_EMAIL` | Yes | Sender address |
 | `SENDGRID_FROM_NAME` | Yes | Sender display name |
@@ -248,6 +252,31 @@ Full list of all variables. See `.env.example` for local dev values.
 | `NEXTAUTH_URL` | Yes | Full URL of this Next.js app |
 | `NEXTAUTH_SECRET` | Yes | NextAuth signing secret |
 | `JWT_SECRET` | Yes | Shared JWT signing secret — must match backend `SECRET_KEY` |
+
+---
+
+## Qualification API
+
+Businesses are scored using the Google Places API. All qualification endpoints live under `/api/v1/qualify/`.
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/autocomplete?q=<text>` | Business search typeahead. Returns up to 5 suggestions. Requires `q` ≥ 2 chars. |
+| `POST` | `/by-place-id` | Score a business by Google `place_id`. Fetches live data from Places API. |
+| `POST` | `/` | Score from raw metrics (no external API call — useful for testing). |
+
+### Scoring Formula (0–100 pts)
+
+| Signal | Hard cutoff | Max pts | Notes |
+|--------|-------------|---------|-------|
+| Google rating | ≥ 4.0 | 40 | Linear 4.0→5.0 |
+| Review count | ≥ 50 | 30 | Log scale, caps at 500 |
+| Review recency | within 12 months | 20 | 3 mo=20, 6 mo=15, 12 mo=10 |
+| Owner response rate | — | 10 | Linear 0–100% |
+
+A business that misses any hard cutoff receives score=0 and `qualified=false`.
 
 ---
 
@@ -296,8 +325,6 @@ The full Terraform config is preserved in `infra/azure/` for when you're ready t
 | Worker Container App | `apex-prod-worker` |
 | Static Web App | `apex-prod-swa` |
 | Key Vault | _(see `infra/azure/modules/key_vault/main.tf`)_ |
-| Subscription ID | `<your-azure-subscription-id>` |
-| Tenant ID | `<your-azure-tenant-id>` |
 
 ---
 
@@ -317,8 +344,7 @@ Alternative to Azure for teams with AWS preference.
 | Log Analytics | CloudWatch |
 
 The application code requires zero changes — only the infrastructure and environment
-variables differ. A Terraform config for AWS would mirror `infra/azure/` using the
-`hashicorp/aws` provider.
+variables differ.
 
 ---
 
@@ -332,10 +358,23 @@ Celery Beat (scheduler)
        └─ for each Area × Category:
             └─ run_crawl_job task
                  └─ Google Places Text Search (20 results/page)
-                      └─ Google Places Details (last review date)
-                      └─ Yelp Business Search (cross-reference)
+                      └─ Google Places Details (rating, review count, last review date)
                       └─ compute_qualification() → score 0–100
                       └─ upsert Business record in Postgres
+```
+
+### Self-Serve Qualification Flow (Live)
+
+```
+User types business name on /apply page (Next.js)
+  └─ GET /api/v1/qualify/autocomplete?q= (debounced, 300ms)
+       └─ Google Places Autocomplete API
+       └─ Returns up to 5 suggestions with place_id
+  └─ User selects suggestion
+       └─ POST /api/v1/qualify/by-place-id { place_id }
+            └─ Google Places Details API
+            └─ compute_qualification()
+            └─ Returns score, breakdown, qualified flag
 ```
 
 ### Purchase Flow
