@@ -39,7 +39,12 @@ export function Footer() {
         </div>
         <div className="border-t border-white/10 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-white/25">
           <span>&copy; {brand.year} {brand.name}. All rights reserved.</span>
-          <span>Qualification is based on verified public review data.</span>
+          <span className="font-mono">
+            v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0"}
+            {process.env.NEXT_PUBLIC_GIT_SHA
+              ? ` · ${process.env.NEXT_PUBLIC_GIT_SHA.slice(0, 7)}`
+              : ""}
+          </span>
         </div>
       </div>
     </footer>

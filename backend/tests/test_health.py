@@ -23,7 +23,7 @@ async def test_health_check_all_fields():
     ) as client:
         response = await client.get("/api/v1/health")
     data = response.json()
-    assert set(data.keys()) == {"status", "service", "environment", "year"}
+    assert set(data.keys()) == {"status", "service", "environment", "year", "version", "git_sha"}
     assert isinstance(data["year"], int)
     assert isinstance(data["environment"], str)
 
