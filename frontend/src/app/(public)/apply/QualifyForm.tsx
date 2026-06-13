@@ -75,20 +75,21 @@ export default function QualifyForm() {
       >
         <div>
           <label className="block text-sm font-semibold text-navy mb-2">
-            Google Maps URL
+            Google Business Link
           </label>
           <input
-            type="url"
+            type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.google.com/maps/place/..."
+            placeholder="https://maps.app.goo.gl/… or https://share.google/… or full Maps URL"
             className="input-base"
             required
             disabled={loading}
           />
           <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-            Open <strong className="text-navy">Google Maps</strong>, find your
-            business, click your listing, and copy the URL from the address bar.
+            Paste any Google link to your business: the full Maps URL, a{" "}
+            <strong className="text-navy">Share</strong> link from Google Maps,
+            or a <strong className="text-navy">maps.app.goo.gl</strong> link.
           </p>
         </div>
         <button

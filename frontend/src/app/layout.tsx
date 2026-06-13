@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description: brand.tagline,
   metadataBase: new URL(`https://${brand.domain}`),
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

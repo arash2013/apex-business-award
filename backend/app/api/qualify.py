@@ -80,10 +80,15 @@ def _extract_business_name(url: str) -> str | None:
     return None
 
 
+def _is_short_url(url: str) -> bool:
+    """Return True for any Google short/share URL that needs redirect resolution."""
+    return any(h in url for h in ("goo.gl", "maps.app", "share.google"))
+
+
 async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     """Return a Place ID from any Google Maps URL, following redirects if needed."""
     resolved = url
-    if "goo.gl" in url or "maps.app" in url:
+    if _is_short_url(url):
         try:
             r = await client.get(url, follow_redirects=True)
             resolved = str(r.url)
@@ -112,8 +117,9 @@ async def _resolve_place_id(client: httpx.AsyncClient, url: str) -> str:
     raise HTTPException(
         status_code=422,
         detail=(
-            "Could not extract a Place ID from that URL. "
-            "Please use the full URL from your browser's address bar on Google Maps."
+            "Could not resolve a business from that URL. "
+            "Accepted formats: full Google Maps URL, maps.app.goo.gl share link, "
+            "or share.google link."
         ),
     )
 

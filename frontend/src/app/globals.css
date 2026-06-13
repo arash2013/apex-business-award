@@ -18,20 +18,61 @@ body {
 }
 
 @layer components {
+  /* Buttons */
   .btn-primary {
     @apply bg-navy text-white px-6 py-3 rounded-lg font-semibold hover:bg-navy-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2;
   }
   .btn-gold {
     @apply bg-gold text-navy px-6 py-3 rounded-lg font-semibold hover:bg-gold-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy;
   }
+
+  /* Badges */
   .badge-gold {
     @apply inline-flex items-center gap-1.5 bg-gold-50 text-gold-700 border border-gold-400 px-3 py-1 rounded-full text-sm font-medium;
   }
+  .badge-tier-premium {
+    @apply inline-flex items-center gap-1 bg-navy text-gold text-[10px] px-2.5 py-0.5 rounded-full font-semibold tracking-wide;
+  }
+  .badge-tier-pro {
+    @apply inline-flex items-center gap-1 bg-gold-50 text-gold-700 border border-gold-300 text-[10px] px-2.5 py-0.5 rounded-full font-semibold;
+  }
+
+  /* Form inputs */
   .input-base {
     @apply w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent placeholder:text-gray-400 transition-shadow;
   }
+
+  /* Typography */
+  .heading-display {
+    @apply font-serif tracking-tight leading-tight;
+  }
+  .section-eyebrow {
+    @apply text-gold text-xs uppercase tracking-ultra font-semibold;
+  }
+  .section-label {
+    @apply text-gray-400 text-xs uppercase tracking-widest font-medium;
+  }
+
+  /* Luxury card */
+  .card-luxury {
+    @apply bg-white rounded-xl border border-cream-200 shadow-sm transition-all duration-300;
+  }
+  .card-luxury:hover {
+    @apply border-gold/30 shadow-md;
+  }
+
+  /* Ornamental divider */
+  .ornament-divider {
+    @apply flex items-center gap-4 my-8;
+  }
+  .ornament-divider::before,
+  .ornament-divider::after {
+    content: "";
+    @apply flex-1 h-px bg-gold/20;
+  }
 }
 
+/* ─── Shimmer border for Premium card ─── */
 @keyframes shimmer-border {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
@@ -42,11 +83,33 @@ body {
   background: linear-gradient(
     90deg,
     #1B2B4B 0%,
-    #C9A84C 30%,
-    #A07830 50%,
-    #C9A84C 70%,
+    #C9A84C 25%,
+    #E8C96A 50%,
+    #C9A84C 75%,
     #1B2B4B 100%
   );
   background-size: 300% 100%;
-  animation: shimmer-border 3s ease-in-out infinite;
+  animation: shimmer-border 3.5s ease-in-out infinite;
+}
+
+/* ─── Hero background texture ─── */
+.hero-texture {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.08) 0%, transparent 70%),
+    linear-gradient(160deg, #0F1D35 0%, #1B2B4B 55%, #1E3258 100%);
+}
+
+/* ─── Gold rule ornament ─── */
+.gold-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #C9A84C;
+}
+.gold-rule::before,
+.gold-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C9A84C44, transparent);
 }
