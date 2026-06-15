@@ -13,18 +13,22 @@ from app.main import app
 _AUTOCOMPLETE_URL = "/api/v1/qualify/autocomplete"
 _BY_PLACE_ID_URL = "/api/v1/qualify/by-place-id"
 
-# Find Place from Text response format (used by autocomplete primary path)
+# Places Autocomplete response format
 _MOCK_AUTOCOMPLETE_RESPONSE = {
-    "candidates": [
+    "predictions": [
         {
             "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
-            "name": "Acme Barbershop",
-            "formatted_address": "123 Main St, Houston, TX",
+            "structured_formatting": {
+                "main_text": "Acme Barbershop",
+                "secondary_text": "123 Main St, Houston, TX",
+            },
         },
         {
             "place_id": "ChIJABC123",
-            "name": "Acme Auto",
-            "formatted_address": "456 Oak Ave, Houston, TX",
+            "structured_formatting": {
+                "main_text": "Acme Auto",
+                "secondary_text": "456 Oak Ave, Houston, TX",
+            },
         },
     ],
     "status": "OK",
@@ -145,11 +149,13 @@ async def test_autocomplete_missing_api_key_returns_503():
 async def test_autocomplete_caps_at_five_results():
     """At most 5 predictions are returned regardless of API response size."""
     many_predictions = {
-        "candidates": [
+        "predictions": [
             {
                 "place_id": f"ChIJ{i}",
-                "name": f"Business {i}",
-                "formatted_address": f"{i} St",
+                "structured_formatting": {
+                    "main_text": f"Business {i}",
+                    "secondary_text": f"{i} St",
+                },
             }
             for i in range(10)
         ]
