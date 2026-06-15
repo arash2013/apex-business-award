@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # Dev-only API-key fallback (used when Azure AD is not configured)
     admin_api_key: str = ""
 
+    # Initial admin credentials (seeded on first startup if no users exist)
+    admin_initial_email: str = "admin@apexbusinessaward.com"
+    admin_initial_password: str = "ChangeMe123!"
+
     # Frontend
     frontend_url: str = "http://localhost:3000"
 

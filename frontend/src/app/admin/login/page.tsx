@@ -1,15 +1,41 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useState, FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { brand } from "@/config/brand";
 
 function LoginForm() {
+  const router = useRouter();
   const params = useSearchParams();
-  const error = params.get("error");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(params.get("error") ? "Access denied." : "");
+  const [loading, setLoading] = useState(false);
 
-  function handleSignIn() {
-    window.location.href = "/.auth/login/aad?post_login_redirect_uri=/admin/pipeline";
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError((body as { detail?: string }).detail ?? "Invalid email or password.");
+        return;
+      }
+      const data = await res.json() as { email: string };
+      sessionStorage.setItem("admin_email", data.email);
+      router.push("/admin/pipeline");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -19,38 +45,56 @@ function LoginForm() {
           {brand.name}
         </p>
         <h1 className="text-2xl font-bold text-navy mt-2">Admin Portal</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Sign in with your Microsoft account
-        </p>
+        <p className="text-sm text-gray-400 mt-1">Sign in to your account</p>
       </div>
 
       {error && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">
-            Your account does not have admin access. Contact the site owner.
-          </p>
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
-      <button
-        onClick={handleSignIn}
-        className="w-full flex items-center justify-center gap-3 bg-navy text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-navy/90 active:scale-[0.98] transition-all"
-      >
-        {/* Microsoft icon */}
-        <svg
-          className="w-5 h-5 shrink-0"
-          viewBox="0 0 21 21"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition"
+            placeholder="admin@apexbusinessaward.com"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy transition"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-navy text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-navy/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
         >
-          <rect x="1" y="1" width="9" height="9" fill="#F25022" />
-          <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
-          <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
-          <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
-        </svg>
-        Sign in with Microsoft
-      </button>
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
     </div>
   );
 }
