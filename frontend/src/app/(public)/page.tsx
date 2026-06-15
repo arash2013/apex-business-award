@@ -1,12 +1,10 @@
 import { brand } from "@/config/brand";
-import { BusinessCard } from "@/components/BusinessCard";
 import Link from "next/link";
-import { SEED_BUSINESSES, QUALIFIED_BUSINESSES } from "@/lib/seed-data";
 
 const STATS = [
-  { value: String(QUALIFIED_BUSINESSES.length), label: "Qualified Businesses" },
-  { value: String([...new Set(QUALIFIED_BUSINESSES.map((b) => b.category))].length), label: "Categories" },
   { value: "100%", label: "Data-Driven" },
+  { value: "4.0+", label: "Star Minimum" },
+  { value: "50+", label: "Reviews Required" },
   { value: String(brand.year), label: "Award Year" },
 ];
 
@@ -29,10 +27,6 @@ const STEPS = [
 ];
 
 export default function HomePage() {
-  const featured = SEED_BUSINESSES.filter(
-    (b) => b.qualified && (b.tier === "pro" || b.tier === "premium")
-  ).slice(0, 6);
-
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────── */}
@@ -44,7 +38,7 @@ export default function HomePage() {
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-3 mb-7">
             <span className="h-px w-8 bg-gold/50" />
-            <p className="section-eyebrow">Est. {brand.year} · National Recognition Program</p>
+            <p className="section-eyebrow">National Recognition Program</p>
             <span className="h-px w-8 bg-gold/50" />
           </div>
 
@@ -137,26 +131,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Featured Winners ─────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-cream">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="section-eyebrow mb-2">{brand.year} Cohort</p>
-              <h2 className="heading-display text-3xl font-bold text-navy">Award Recipients</h2>
-            </div>
-            <Link href="/winners" className="text-gold hover:underline text-sm font-semibold hidden sm:block">
-              View all {QUALIFIED_BUSINESSES.length} →
+      {/* ── CTA ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 bg-navy text-white text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="heading-display text-3xl font-bold mb-4">
+            Ready to find out if you qualify?
+          </h2>
+          <p className="text-white/60 mb-8 text-lg">
+            Check your business against our criteria in under 60 seconds — no signup required.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/apply" className="btn-gold px-10">
+              Check Your Business
             </Link>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featured.map((b) => (
-              <BusinessCard key={b.slug} {...b} />
-            ))}
-          </div>
-          <div className="text-center mt-8 sm:hidden">
-            <Link href="/winners" className="text-gold hover:underline text-sm font-semibold">
-              View all {QUALIFIED_BUSINESSES.length} winners →
+            <Link href="/winners" className="border border-white/25 text-white/80 px-8 py-3 rounded-lg font-semibold hover:bg-white/8 hover:text-white hover:border-white/40 transition-all text-center">
+              Browse Winners
             </Link>
           </div>
         </div>
