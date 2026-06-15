@@ -52,3 +52,4 @@ coverage.xml
 *.tfstate
 *.tfstate.backup
 crash.log
+.claude/
