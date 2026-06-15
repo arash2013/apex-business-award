@@ -60,9 +60,7 @@ export function WinnersClient({ winners }: Props) {
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-navy focus:outline-none focus:ring-2 focus:ring-gold"
         >
           <option value="">All Categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select
           value={area}
@@ -70,9 +68,7 @@ export function WinnersClient({ winners }: Props) {
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-navy focus:outline-none focus:ring-2 focus:ring-gold"
         >
           <option value="">All Areas</option>
-          {areas.map((a) => (
-            <option key={a} value={a}>{a}</option>
-          ))}
+          {areas.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
         {hasFilter && (
           <button
@@ -108,14 +104,22 @@ export function WinnersClient({ winners }: Props) {
         </div>
       ) : (
         <div className="text-center py-20">
-          <p className="text-lg font-semibold text-navy mb-1">No winners match your filters</p>
-          <p className="text-gray-400 text-sm mb-4">Try adjusting your search or clearing the filters.</p>
-          <button
-            onClick={() => { setCategory(""); setArea(""); setSearch(""); }}
-            className="text-gold hover:underline text-sm font-medium"
-          >
-            Clear all filters
-          </button>
+          <p className="text-lg font-semibold text-navy mb-1">
+            {winners.length === 0 ? "No winners announced yet" : "No winners match your filters"}
+          </p>
+          <p className="text-gray-400 text-sm mb-4">
+            {winners.length === 0
+              ? "Check back soon — we're reviewing qualified businesses now."
+              : "Try adjusting your search or clearing the filters."}
+          </p>
+          {hasFilter && (
+            <button
+              onClick={() => { setCategory(""); setArea(""); setSearch(""); }}
+              className="text-gold hover:underline text-sm font-medium"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       )}
     </div>
