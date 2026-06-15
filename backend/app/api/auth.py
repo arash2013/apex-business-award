@@ -64,6 +64,24 @@ async def require_admin(
     creds: HTTPAuthorizationCredentials = Security(_bearer),
 ) -> dict[str, Any]:
     """FastAPI dependency that enforces admin-only access on a route."""
+    token = creds.credentials
+
+    # ── Backend-issued HS256 JWT (username/password login) ───────────────────
+    try:
+        header = jwt.get_unverified_header(token)
+        if header.get("alg") == "HS256":
+            claims: dict[str, Any] = jwt.decode(
+                token,
+                settings.secret_key,
+                algorithms=["HS256"],
+                issuer="apex-admin",
+            )
+            if claims.get("role") not in ("admin", "staff"):
+                raise HTTPException(403, "Admin role required")
+            return claims
+    except JWTError:
+        pass  # fall through to other auth methods
+
     use_azure = bool(settings.azure_tenant_id and settings.azure_client_id)
 
     if not use_azure:
@@ -72,11 +90,11 @@ async def require_admin(
             raise HTTPException(
                 503,
                 detail=(
-                    "Admin auth not configured — set AZURE_TENANT_ID + AZURE_CLIENT_ID"
-                    " or ADMIN_API_KEY"
+                    "Admin auth not configured — set AZURE_TENANT_ID + AZURE_CLIENT_ID,"
+                    " ADMIN_API_KEY, or use the admin login endpoint"
                 ),
             )
-        if not secrets.compare_digest(creds.credentials, settings.admin_api_key):
+        if not secrets.compare_digest(token, settings.admin_api_key):
             raise HTTPException(401, "Invalid API key")
         return {"sub": "api-key", "roles": [settings.azure_admin_role]}
 

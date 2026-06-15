@@ -4,12 +4,16 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from passlib.context import CryptContext
+from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .api import admin, areas, businesses, categories, health, qualify, winners
+from .api import admin, admin_auth, areas, businesses, categories, health, qualify, winners
 from .config.settings import settings
+from .db import AsyncSessionLocal
+from .models.user import User, UserRole
 
 # ── Rate limiter ─────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
@@ -60,6 +64,26 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
+_pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+@app.on_event("startup")
+async def _seed_initial_admin() -> None:
+    """Create the initial admin user if no users exist yet."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User))
+        if result.scalars().first() is not None:
+            return
+        user = User(
+            email=settings.admin_initial_email,
+            password_hash=_pwd_ctx.hash(settings.admin_initial_password),
+            role=UserRole.admin,
+        )
+        session.add(user)
+        await session.commit()
+
+
+app.include_router(admin_auth.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(businesses.router, prefix="/api/v1")
 app.include_router(qualify.router, prefix="/api/v1")
