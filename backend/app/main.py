@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .api import admin, areas, businesses, categories, health, qualify, winners
+from .api import admin, areas, businesses, categories, customer_auth, customer_portal, health, qualify, winners
 from .config.settings import settings
 
 # ── Rate limiter ─────────────────────────────────────────────────────────────
@@ -67,3 +67,5 @@ app.include_router(areas.router, prefix="/api/v1")
 app.include_router(categories.router, prefix="/api/v1")
 app.include_router(winners.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(customer_auth.router, prefix="/api/v1")
+app.include_router(customer_portal.router, prefix="/api/v1")

@@ -64,8 +64,14 @@ export function Nav() {
               );
             })}
             <Link
+              href="/portal/login"
+              className="px-4 py-2 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors text-sm"
+            >
+              My Account
+            </Link>
+            <Link
               href="/apply"
-              className="ml-3 inline-flex items-center gap-1.5 bg-gold text-navy text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gold-400 transition-colors"
+              className="ml-2 inline-flex items-center gap-1.5 bg-gold text-navy text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gold-400 transition-colors"
             >
               Check Your Business
             </Link>
@@ -109,6 +115,13 @@ export function Nav() {
               </Link>
             );
           })}
+          <Link
+            href="/portal/login"
+            onClick={() => setMobileOpen(false)}
+            className="block px-4 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors"
+          >
+            My Account
+          </Link>
           <Link
             href="/apply"
             onClick={() => setMobileOpen(false)}
