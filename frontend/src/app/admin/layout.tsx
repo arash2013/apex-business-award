@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { brand } from "@/config/brand";
 
-interface SwaUser {
-  userDetails: string;
-  userRoles: string[];
-  identityProvider: string;
+interface AdminUser {
+  email: string;
 }
 
-function useSwaUser(): SwaUser | null {
-  const [user, setUser] = useState<SwaUser | null>(null);
+function useAdminUser(): AdminUser | null {
+  const [user, setUser] = useState<AdminUser | null>(null);
   useEffect(() => {
-    fetch("/.auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.clientPrincipal ?? null))
-      .catch(() => null);
+    // Read email from the JWT payload (middle segment) stored in the cookie.
+    // We can't access the httpOnly cookie directly, so we rely on the server
+    // to expose the email after login via a lightweight endpoint if needed.
+    // For now, read from sessionStorage set after login.
+    const email = sessionStorage.getItem("admin_email");
+    if (email) setUser({ email });
   }, []);
   return user;
 }
@@ -81,10 +81,13 @@ const NAV_ITEMS = [
 
 function AdminSidebar() {
   const pathname = usePathname();
-  const user = useSwaUser();
+  const user = useAdminUser();
+  const router = useRouter();
 
-  function handleSignOut() {
-    window.location.href = "/.auth/logout?post_logout_redirect_uri=/admin/login";
+  async function handleSignOut() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    sessionStorage.removeItem("admin_email");
+    router.push("/admin/login");
   }
 
   return (
@@ -116,9 +119,9 @@ function AdminSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-white/10 space-y-3">
-        {user?.userDetails && (
-          <p className="text-xs text-white/40 truncate" title={user.userDetails}>
-            {user.userDetails}
+        {user?.email && (
+          <p className="text-xs text-white/40 truncate" title={user.email}>
+            {user.email}
           </p>
         )}
         <div className="flex flex-col gap-1">

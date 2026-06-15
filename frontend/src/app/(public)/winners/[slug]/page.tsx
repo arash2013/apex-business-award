@@ -58,12 +58,7 @@ export default async function BusinessProfilePage({ params }: Props) {
         href="/winners"
         className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-navy transition-colors mb-10 group"
       >
-        <svg
-          className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         Back to Winners
@@ -77,12 +72,7 @@ export default async function BusinessProfilePage({ params }: Props) {
           {biz.address && <p className="text-gray-500 text-sm">{biz.address}</p>}
           {biz.phone && <p className="text-gray-500 text-sm">{biz.phone}</p>}
           {biz.website && (
-            <a
-              href={biz.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gold text-sm hover:underline mt-1.5 inline-block"
-            >
+            <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-gold text-sm hover:underline mt-1.5 inline-block">
               {biz.website.replace(/^https?:\/\//, "")} ↗
             </a>
           )}
@@ -99,14 +89,9 @@ export default async function BusinessProfilePage({ params }: Props) {
             </span>
           </div>
           <div className="h-1.5 bg-cream-200 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gold transition-all"
-              style={{ width: `${biz.qualification_score}%` }}
-            />
+            <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${biz.qualification_score}%` }} />
           </div>
-          <p className="text-xs text-gray-400 mt-2.5">
-            Based on Google rating, review count, recency, and owner engagement
-          </p>
+          <p className="text-xs text-gray-400 mt-2.5">Based on Google rating, review count, recency, and owner engagement</p>
         </div>
       )}
 
@@ -123,10 +108,7 @@ export default async function BusinessProfilePage({ params }: Props) {
         </div>
       )}
 
-      <div
-        className="rounded-xl p-6 mb-5 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #0F1D35 0%, #1B2B4B 100%)" }}
-      >
+      <div className="rounded-xl p-6 mb-5 relative overflow-hidden" style={{ background: "linear-gradient(160deg, #0F1D35 0%, #1B2B4B 100%)" }}>
         <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold text-sm">Embed Your Badge</h2>
@@ -143,13 +125,9 @@ export default async function BusinessProfilePage({ params }: Props) {
           <div className="relative rounded-[11px] bg-gold-50 border border-gold/20 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <p className="font-semibold text-navy mb-1">Upgrade to Premium</p>
-              <p className="text-sm text-gray-500">
-                Add a physical award plaque mailed directly to your business.
-              </p>
+              <p className="text-sm text-gray-500">Add a physical award plaque mailed directly to your business.</p>
             </div>
-            <Link href="/apply" className="btn-gold shrink-0 text-sm px-5 py-2.5">
-              Upgrade to Premium
-            </Link>
+            <Link href="/apply" className="btn-gold shrink-0 text-sm px-5 py-2.5">Upgrade to Premium</Link>
           </div>
         </div>
       )}
